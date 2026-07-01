@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { TouchableOpacity, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { PantryItem } from '../types';
 import { colors, radius, spacing } from '../theme/theme';
@@ -22,14 +22,14 @@ export default function PantryItemRow({ item, onRemove }: Props) {
           {item.quantity ? ` · ${item.quantity}` : ''} · {Math.round(item.confidence * 100)}% confident
         </Text>
       </View>
-      <Pressable
+      <TouchableOpacity
         onPress={onRemove}
         accessibilityRole="button"
         accessibilityLabel={`Remove ${item.name} from pantry`}
-        hitSlop={10}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <Ionicons name="close-circle" size={22} color={colors.textSecondary} />
-      </Pressable>
+      </TouchableOpacity>
     </View>
   );
 }

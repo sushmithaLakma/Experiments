@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
-  Pressable,
+  TouchableOpacity,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -48,14 +48,14 @@ export default function MealSuggestionsScreen({ navigation }: Props) {
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.headerRow}>
-        <Pressable
+        <TouchableOpacity
           onPress={() => navigation.goBack()}
           accessibilityRole="button"
           accessibilityLabel="Go back"
-          hitSlop={10}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-        </Pressable>
+        </TouchableOpacity>
         <Text style={typography.heading}>Meal Suggestions</Text>
         <View style={{ width: 24 }} />
       </View>

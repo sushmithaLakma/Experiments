@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   FlatList,
-  Pressable,
+  TouchableOpacity,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -34,7 +34,7 @@ export default function HomeScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={styles.headerRow}>
-          <Pressable
+          <TouchableOpacity
             style={styles.profileRow}
             onPress={() => navigation.navigate('DietarySettings')}
             accessibilityRole="button"
@@ -44,14 +44,14 @@ export default function HomeScreen({ navigation }: Props) {
               <Text style={styles.avatarInitial}>{activeProfile.name[0]}</Text>
             </View>
             <Text style={styles.profileName}>{activeProfile.name}</Text>
-          </Pressable>
-          <Pressable
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.bell}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
             <Ionicons name="notifications-outline" size={20} color={colors.textPrimary} />
-          </Pressable>
+          </TouchableOpacity>
         </View>
 
         <Text style={typography.title}>What's cooking today?</Text>
@@ -87,7 +87,7 @@ export default function HomeScreen({ navigation }: Props) {
           contentContainerStyle={{ paddingBottom: spacing.lg }}
         />
 
-        <Pressable
+        <TouchableOpacity
           style={styles.scanCta}
           onPress={() => navigation.navigate('PantryScanner')}
           accessibilityRole="button"
@@ -99,7 +99,7 @@ export default function HomeScreen({ navigation }: Props) {
             <Text style={styles.scanSubtitle}>Snap a photo to get personalized meal ideas</Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color={colors.accent} />
-        </Pressable>
+        </TouchableOpacity>
       </ScrollView>
       <BottomNavBar active="Home" />
     </SafeAreaView>

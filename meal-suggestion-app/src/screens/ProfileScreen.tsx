@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -18,7 +18,7 @@ export default function ProfileScreen({ navigation }: Props) {
         <Text style={typography.title}>Household</Text>
 
         {profiles.map((p) => (
-          <Pressable
+          <TouchableOpacity
             key={p.id}
             onPress={() => setActiveProfileId(p.id)}
             accessibilityRole="button"
@@ -40,10 +40,10 @@ export default function ProfileScreen({ navigation }: Props) {
             {p.id === activeProfileId && (
               <Ionicons name="checkmark-circle" size={22} color={colors.accent} />
             )}
-          </Pressable>
+          </TouchableOpacity>
         ))}
 
-        <Pressable
+        <TouchableOpacity
           style={styles.settingsButton}
           onPress={() => navigation.navigate('DietarySettings')}
           accessibilityRole="button"
@@ -51,7 +51,7 @@ export default function ProfileScreen({ navigation }: Props) {
         >
           <Ionicons name="settings-outline" size={18} color={colors.accent} />
           <Text style={styles.settingsText}>Edit Dietary Settings</Text>
-        </Pressable>
+        </TouchableOpacity>
       </ScrollView>
       <BottomNavBar active="Profile" />
     </SafeAreaView>

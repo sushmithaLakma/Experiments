@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { TouchableOpacity, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -26,7 +26,7 @@ export default function BottomNavBar({ active }: { active: TabKey }) {
       {TABS.map((tab) => {
         const isActive = tab.key === active;
         return (
-          <Pressable
+          <TouchableOpacity
             key={tab.key}
             onPress={() => navigation.navigate(tab.key as any)}
             accessibilityRole="tab"
@@ -39,7 +39,7 @@ export default function BottomNavBar({ active }: { active: TabKey }) {
               size={tab.key === 'PantryScanner' ? 26 : 20}
               color={isActive ? colors.accent : '#FFFFFF'}
             />
-          </Pressable>
+          </TouchableOpacity>
         );
       })}
     </View>

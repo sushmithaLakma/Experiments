@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   ActivityIndicator,
   Image,
-  Pressable,
+  TouchableOpacity,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -84,14 +84,14 @@ export default function PantryScannerScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.headerRow}>
-          <Pressable
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
             accessibilityLabel="Go back"
-            hitSlop={10}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          </TouchableOpacity>
           <Text style={typography.heading}>Pantry Scanner</Text>
           <View style={{ width: 24 }} />
         </View>
@@ -101,7 +101,7 @@ export default function PantryScannerScreen({ navigation }: Props) {
         </Text>
 
         <View style={styles.actionsRow}>
-          <Pressable
+          <TouchableOpacity
             style={styles.actionButton}
             onPress={handlePickFromCamera}
             accessibilityRole="button"
@@ -109,8 +109,8 @@ export default function PantryScannerScreen({ navigation }: Props) {
           >
             <Ionicons name="camera" size={22} color={colors.accent} />
             <Text style={styles.actionLabel}>Camera</Text>
-          </Pressable>
-          <Pressable
+          </TouchableOpacity>
+          <TouchableOpacity
             style={styles.actionButton}
             onPress={handlePickFromLibrary}
             accessibilityRole="button"
@@ -118,7 +118,7 @@ export default function PantryScannerScreen({ navigation }: Props) {
           >
             <Ionicons name="images" size={22} color={colors.accent} />
             <Text style={styles.actionLabel}>Upload</Text>
-          </Pressable>
+          </TouchableOpacity>
         </View>
 
         {error && (
@@ -132,20 +132,20 @@ export default function PantryScannerScreen({ navigation }: Props) {
             {photos.map((uri) => (
               <View key={uri} style={styles.photoThumbWrap}>
                 <Image source={{ uri }} style={styles.photoThumb} accessibilityLabel="Pantry photo" />
-                <Pressable
+                <TouchableOpacity
                   style={styles.removePhoto}
                   onPress={() => removePhoto(uri)}
                   accessibilityRole="button"
                   accessibilityLabel="Remove photo"
                 >
                   <Ionicons name="close" size={14} color="#fff" />
-                </Pressable>
+                </TouchableOpacity>
               </View>
             ))}
           </ScrollView>
         )}
 
-        <Pressable
+        <TouchableOpacity
           style={[styles.scanButton, scanning && styles.scanButtonDisabled]}
           onPress={handleScan}
           disabled={scanning}
@@ -157,7 +157,7 @@ export default function PantryScannerScreen({ navigation }: Props) {
           ) : (
             <Text style={styles.scanButtonText}>Scan Inventory</Text>
           )}
-        </Pressable>
+        </TouchableOpacity>
 
         {pantryItems.length > 0 && (
           <>
@@ -167,7 +167,7 @@ export default function PantryScannerScreen({ navigation }: Props) {
             {pantryItems.map((item) => (
               <PantryItemRow key={item.id} item={item} onRemove={() => removeItem(item.id)} />
             ))}
-            <Pressable
+            <TouchableOpacity
               style={styles.continueButton}
               onPress={() => navigation.navigate('MealSuggestions')}
               accessibilityRole="button"
@@ -175,7 +175,7 @@ export default function PantryScannerScreen({ navigation }: Props) {
             >
               <Text style={styles.continueText}>Get Meal Suggestions</Text>
               <Ionicons name="arrow-forward" size={18} color={colors.surface} />
-            </Pressable>
+            </TouchableOpacity>
           </>
         )}
       </ScrollView>

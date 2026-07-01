@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, TouchableOpacity, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
@@ -30,22 +30,22 @@ export default function RecipeDetailScreen({ route, navigation }: Props) {
       <ScrollView>
         <View style={styles.imageWrap}>
           <Image source={{ uri: recipe.image }} style={styles.image} accessibilityLabel={recipe.title} />
-          <Pressable
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
             accessibilityLabel="Go back"
             style={styles.backButton}
           >
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
-          </Pressable>
-          <Pressable
+          </TouchableOpacity>
+          <TouchableOpacity
             onPress={() => toggleFavorite(recipe.id)}
             accessibilityRole="button"
             accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             style={styles.favButton}
           >
             <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={20} color={colors.heart} />
-          </Pressable>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.content}>

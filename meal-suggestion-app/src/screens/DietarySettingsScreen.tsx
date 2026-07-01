@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Pressable,
+  TouchableOpacity,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -105,14 +105,14 @@ export default function DietarySettingsScreen({ navigation }: Props) {
     <SafeAreaView style={styles.safe}>
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.headerRow}>
-          <Pressable
+          <TouchableOpacity
             onPress={() => navigation.goBack()}
             accessibilityRole="button"
             accessibilityLabel="Go back"
-            hitSlop={10}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          </TouchableOpacity>
           <Text style={typography.heading}>Dietary Settings</Text>
           <View style={{ width: 24 }} />
         </View>
@@ -120,7 +120,7 @@ export default function DietarySettingsScreen({ navigation }: Props) {
         <Text style={styles.label}>Household Profiles</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.profileScroll}>
           {profiles.map((p) => (
-            <Pressable
+            <TouchableOpacity
               key={p.id}
               onPress={() => switchProfile(p.id)}
               accessibilityRole="button"
@@ -133,16 +133,16 @@ export default function DietarySettingsScreen({ navigation }: Props) {
             >
               <View style={[styles.chipAvatar, { backgroundColor: p.avatarColor }]} />
               <Text style={styles.chipName}>{p.name}</Text>
-            </Pressable>
+            </TouchableOpacity>
           ))}
-          <Pressable
+          <TouchableOpacity
             onPress={handleAddProfile}
             accessibilityRole="button"
             accessibilityLabel="Add household member"
             style={styles.addProfileChip}
           >
             <Ionicons name="add" size={20} color={colors.accent} />
-          </Pressable>
+          </TouchableOpacity>
         </ScrollView>
 
         <Text style={styles.label}>Name</Text>
@@ -159,7 +159,7 @@ export default function DietarySettingsScreen({ navigation }: Props) {
           {ALL_DIET_TAGS.map((tag) => {
             const active = draft.dietaryRestrictions.includes(tag);
             return (
-              <Pressable
+              <TouchableOpacity
                 key={tag}
                 onPress={() => toggleDiet(tag)}
                 accessibilityRole="button"
@@ -168,7 +168,7 @@ export default function DietarySettingsScreen({ navigation }: Props) {
                 style={[styles.tag, active && styles.tagActive]}
               >
                 <Text style={[styles.tagText, active && styles.tagTextActive]}>{tag}</Text>
-              </Pressable>
+              </TouchableOpacity>
             );
           })}
         </View>
@@ -183,18 +183,18 @@ export default function DietarySettingsScreen({ navigation }: Props) {
             accessibilityLabel="Add allergy"
             onSubmitEditing={addAllergy}
           />
-          <Pressable
+          <TouchableOpacity
             onPress={addAllergy}
             accessibilityRole="button"
             accessibilityLabel="Add allergy"
             style={styles.addButton}
           >
             <Ionicons name="add" size={20} color={colors.surface} />
-          </Pressable>
+          </TouchableOpacity>
         </View>
         <View style={styles.tagWrap}>
           {draft.allergies.map((a) => (
-            <Pressable
+            <TouchableOpacity
               key={a}
               onPress={() => removeAllergy(a)}
               accessibilityRole="button"
@@ -203,7 +203,7 @@ export default function DietarySettingsScreen({ navigation }: Props) {
             >
               <Text style={styles.tagText}>{a}</Text>
               <Ionicons name="close" size={12} color={colors.textPrimary} />
-            </Pressable>
+            </TouchableOpacity>
           ))}
         </View>
 
@@ -217,18 +217,18 @@ export default function DietarySettingsScreen({ navigation }: Props) {
             accessibilityLabel="Add disliked ingredient"
             onSubmitEditing={addDislike}
           />
-          <Pressable
+          <TouchableOpacity
             onPress={addDislike}
             accessibilityRole="button"
             accessibilityLabel="Add disliked ingredient"
             style={styles.addButton}
           >
             <Ionicons name="add" size={20} color={colors.surface} />
-          </Pressable>
+          </TouchableOpacity>
         </View>
         <View style={styles.tagWrap}>
           {draft.dislikedIngredients.map((i) => (
-            <Pressable
+            <TouchableOpacity
               key={i}
               onPress={() => removeDislike(i)}
               accessibilityRole="button"
@@ -237,18 +237,18 @@ export default function DietarySettingsScreen({ navigation }: Props) {
             >
               <Text style={styles.tagText}>{i}</Text>
               <Ionicons name="close" size={12} color={colors.textPrimary} />
-            </Pressable>
+            </TouchableOpacity>
           ))}
         </View>
 
-        <Pressable
+        <TouchableOpacity
           style={styles.saveButton}
           onPress={handleSave}
           accessibilityRole="button"
           accessibilityLabel="Save dietary settings"
         >
           <Text style={styles.saveText}>Save Settings</Text>
-        </Pressable>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );

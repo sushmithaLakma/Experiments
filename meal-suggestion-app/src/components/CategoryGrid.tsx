@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { TouchableOpacity, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { mealCategories } from '../data/mockData';
 import { colors, radius, spacing } from '../theme/theme';
@@ -15,7 +15,7 @@ export default function CategoryGrid({ selected, onSelect }: Props) {
       {mealCategories.map((cat) => {
         const isActive = selected === cat.key;
         return (
-          <Pressable
+          <TouchableOpacity
             key={cat.key}
             onPress={() => onSelect(cat.key)}
             accessibilityRole="button"
@@ -29,7 +29,7 @@ export default function CategoryGrid({ selected, onSelect }: Props) {
               color={isActive ? colors.accent : colors.iconOrange}
             />
             <Text style={[styles.label, isActive && styles.labelActive]}>{cat.key}</Text>
-          </Pressable>
+          </TouchableOpacity>
         );
       })}
     </View>
