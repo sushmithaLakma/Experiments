@@ -51,12 +51,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: spacing.sm,
     gap: 6,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 3,
   },
   tileActive: {
     backgroundColor: colors.accentLight,
   },
   label: {
-    fontSize: 11,
+    fontSize: 12,
     color: colors.textPrimary,
     fontWeight: '500',
   },

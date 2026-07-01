@@ -22,13 +22,14 @@ export default function RecipeCard({
   fullWidth = false,
 }: Props) {
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`Open recipe ${recipe.title}`}
-      style={[styles.card, fullWidth ? { width: '100%' } : { width }]}
-      activeOpacity={0.85}
-    >
+    <View style={[styles.card, fullWidth ? { width: '100%' } : { width }]}>
+      <TouchableOpacity
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`Open recipe ${recipe.title}`}
+        style={StyleSheet.absoluteFill}
+        activeOpacity={0.88}
+      />
       <Image source={{ uri: recipe.image }} style={styles.image} accessibilityLabel={recipe.title} />
       <TouchableOpacity
         onPress={onToggleFavorite}
@@ -51,7 +52,7 @@ export default function RecipeCard({
       <View style={styles.matchBadge}>
         <Text style={styles.matchText}>{recipe.matchPercent}% match</Text>
       </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
@@ -72,11 +73,15 @@ const styles = StyleSheet.create({
     top: spacing.sm,
     right: spacing.sm,
     backgroundColor: colors.surface,
-    width: 32,
-    height: 32,
+    width: 34,
+    height: 34,
     borderRadius: radius.pill,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.12,
+    shadowRadius: 4,
   },
   matchBadge: {
     position: 'absolute',
@@ -98,16 +103,23 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingTop: spacing.xl,
+    backgroundColor: 'rgba(0,0,0,0.48)',
   },
   title: {
     color: '#fff',
     fontSize: 16,
     fontWeight: '700',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   author: {
-    color: '#EDEDED',
+    color: 'rgba(255,255,255,0.85)',
     fontSize: 12,
     marginTop: 2,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });
