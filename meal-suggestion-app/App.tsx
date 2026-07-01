@@ -37,11 +37,14 @@ const PHONE_H = 844;
 
 const styles = StyleSheet.create({
   webRoot: {
-    flex: 1,
+    position: 'absolute' as any,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#111',
-    minHeight: '100vh' as any,
   },
   phoneFrame: {
     width: PHONE_W,
