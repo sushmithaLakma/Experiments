@@ -1,5 +1,5 @@
 import React from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Recipe } from '../types';
 import { colors, radius, spacing } from '../theme/theme';
@@ -22,22 +22,24 @@ export default function RecipeCard({
   fullWidth = false,
 }: Props) {
   return (
-    <Pressable
+    <TouchableOpacity
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Open recipe ${recipe.title}`}
       style={[styles.card, fullWidth ? { width: '100%' } : { width }]}
+      activeOpacity={0.85}
     >
       <Image source={{ uri: recipe.image }} style={styles.image} accessibilityLabel={recipe.title} />
-      <Pressable
+      <TouchableOpacity
         onPress={onToggleFavorite}
         accessibilityRole="button"
         accessibilityLabel={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-        hitSlop={10}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         style={styles.heartButton}
+        activeOpacity={0.7}
       >
         <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={18} color={colors.heart} />
-      </Pressable>
+      </TouchableOpacity>
       <View style={styles.overlay}>
         <Text style={styles.title} numberOfLines={1}>
           {recipe.title}
@@ -49,7 +51,7 @@ export default function RecipeCard({
       <View style={styles.matchBadge}>
         <Text style={styles.matchText}>{recipe.matchPercent}% match</Text>
       </View>
-    </Pressable>
+    </TouchableOpacity>
   );
 }
 
