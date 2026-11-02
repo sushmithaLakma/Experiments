@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Best You</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="wrap">
+    <h1>Best You</h1>
+    <p class="lede">Talk to the best version of yourself on WhatsApp. For the days you're stuck in your head, comparing, overthinking, or just need someone who gets you.</p>
+
+    <!-- Step 1: phone number -->
+    <form id="phone-step" class="card">
+      <label for="phone">Your WhatsApp number</label>
+      <input id="phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+44 7700 900123" required>
+      <p class="hint">Include your country code. We'll send you a 6-digit code.</p>
+      <button class="btn" type="submit">Send my code</button>
+      <p class="error" id="phone-error" role="alert"></p>
+    </form>
+
+    <!-- Step 2: OTP -->
+    <form id="code-step" class="card hidden">
+      <label for="code">Enter your code</label>
+      <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" required>
+      <p class="hint" id="code-hint">We sent it to your WhatsApp.</p>
+      <button class="btn" type="submit">Verify</button>
+      <button class="btn secondary" type="button" id="change-number">Use a different number</button>
+      <p class="error" id="code-error" role="alert"></p>
+    </form>
+
+    <!-- Step 3: open WhatsApp -->
+    <section id="done-step" class="card hidden">
+      <label>You're all set 💛</label>
+      <p class="hint">Tap below to start chatting. Say hi, and we'll take it from there.</p>
+      <a class="btn" id="wa-link" href="#">Start chatting on WhatsApp</a>
+      <a class="btn secondary hidden" id="test-chat-link" href="chat.html">Try it in the browser instead</a>
+    </section>
+
+    <p class="foot">Best You is an AI companion, not a therapist or emergency service. If you're in crisis, please contact local emergency services or a helpline. You can type "delete my data" in the chat at any time.</p>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let phone = "";
+
+    function show(step) {
+      for (const id of ["phone-step", "code-step", "done-step"]) {
+        $(id).classList.toggle("hidden", id !== step);
+      }
+    }
+
+    async function post(url, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Something went wrong. Please try again.");
+      return data;
+    }
+
+    $("phone-step").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = e.submitter;
+      btn.disabled = true;
+      $("phone-error").textContent = "";
+      try {
+        phone = $("phone").value;
+        const data = await post("/api/otp/request", { phone });
+        $("code-hint").textContent = data.channel === "console"
+          ? "Dev mode: your code is printed in the server console."
+          : "We sent it to your WhatsApp.";
+        show("code-step");
+        $("code").focus();
+      } catch (err) {
+        $("phone-error").textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    $("code-step").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = e.submitter;
+      btn.disabled = true;
+      $("code-error").textContent = "";
+      try {
+        const data = await post("/api/otp/verify", { phone, code: $("code").value });
+        if (data.whatsappLink) {
+          $("wa-link").href = data.whatsappLink;
+        } else {
+          $("wa-link").classList.add("hidden");
+        }
+        if (data.testChat) {
+          try { sessionStorage.setItem("bestYouChat", JSON.stringify(data.testChat)); } catch {}
+          $("test-chat-link").href = "chat.html#" + encodeURIComponent(JSON.stringify(data.testChat));
+          $("test-chat-link").classList.remove("hidden");
+        }
+        show("done-step");
+      } catch (err) {
+        $("code-error").textContent = err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
+    $("change-number").addEventListener("click", () => show("phone-step"));
+  </script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Best You · Test Chat</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="chat">
+    <header>
+      <strong>Best You</strong>
+      <span>Test chat: the same conversation you'd have on WhatsApp</span>
+    </header>
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <form class="composer" id="composer">
+      <input id="text" autocomplete="off" placeholder="Type a message" aria-label="Message">
+      <button class="btn" type="submit">Send</button>
+    </form>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    let session = null;
+    try {
+      session = JSON.parse(decodeURIComponent(location.hash.slice(1)) || "null");
+      if (session) sessionStorage.setItem("bestYouChat", JSON.stringify(session));
+      session ??= JSON.parse(sessionStorage.getItem("bestYouChat") || "null");
+    } catch {}
+    history.replaceState(null, "", location.pathname); // keep the token out of the address bar
+
+    function add(role, text, extraClass = "") {
+      const div = document.createElement("div");
+      div.className = `bubble ${role} ${extraClass}`;
+      div.textContent = text;
+      $("messages").appendChild(div);
+      $("messages").scrollTop = $("messages").scrollHeight;
+      return div;
+    }
+
+    async function post(url, body) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...session, ...body }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Something went wrong.");
+      return data;
+    }
+
+    async function init() {
+      if (!session) {
+        add("assistant", "Please sign up first so I know it's you.");
+        const a = document.createElement("a");
+        a.href = "/"; a.textContent = "Go to sign up"; a.className = "btn";
+        $("messages").appendChild(a);
+        $("composer").classList.add("hidden");
+        return;
+      }
+      try {
+        const { history } = await post("/api/chat/history", {});
+        for (const m of history) add(m.role, m.text);
+        if (!history.length) add("assistant", "Say hi to get started 💛", "typing");
+      } catch (err) {
+        add("assistant", err.message);
+      }
+      $("text").focus();
+    }
+
+    $("composer").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const text = $("text").value.trim();
+      if (!text) return;
+      $("text").value = "";
+      add("user", text);
+      const typing = add("assistant", "typing…", "typing");
+      try {
+        const data = await post("/api/chat", { text });
+        typing.remove();
+        add("assistant", data.reply);
+        if (data.deleted) {
+          try { sessionStorage.removeItem("bestYouChat"); } catch {}
+          $("composer").classList.add("hidden");
+        }
+      } catch (err) {
+        typing.remove();
+        add("assistant", err.message, "typing");
+      }
+      $("text").focus();
+    });
+
+    init();
+  </script>
+</body>
+</html>
