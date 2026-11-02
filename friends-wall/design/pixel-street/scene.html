@@ -1,0 +1,478 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+@font-face { font-family: Silk; src: url(fonts/Silkscreen.woff2); }
+@font-face { font-family: VT; src: url(fonts/VT323.woff2); }
+body { margin: 0; background: #000; }
+canvas { display: block; }
+</style>
+<canvas id="hi"></canvas>
+<script>
+const MODE = new URLSearchParams(location.search).get('mode') || 'world';
+const THEME = new URLSearchParams(location.search).get('theme') || 'day';
+const THEMES = {
+  day: { paper: '#ffffff', sky: ['#5b86d6', '#5b86d6'], cloud: '#ffffff', skyline: ['#86a9c4', '#7c9fbd', '#9dbbd4', '#c9d7f2'],
+    greens: ['#16302a', '#1f3d31', '#2c5a3e', '#3f7349', '#5b9156'], bcolors: ['#4b7a86', '#5b6e8c', '#3f6878', '#557e6a', '#6d7f99'],
+    roof: ['#a8665a', '#9b5a50', '#6e3f3a'], street: '#2f3f48', pattern: null, wallTint: null },
+  sunset: { paper: '#fff1dc', sky: ['#8a6bb8', '#f39a7a'], cloud: '#fff1dc', skyline: ['#c89aa8', '#b88ca6', '#e2b6b8', '#ffe2a8'],
+    greens: ['#2a2a3e', '#3b3a52', '#5a4f6a', '#7d6a82', '#a08aa0'], bcolors: ['#7a5f8a', '#a0607a', '#5f5a8a', '#8a6a7a', '#6a7aa0'],
+    roof: ['#3f3a5a', '#34304c', '#211d33'], street: '#3a3048', pattern: 'stripes', wallTint: '#ffb070' },
+  night: { paper: '#18233a', sky: ['#18233a', '#22304d'], cloud: '#4a5f86', stars: true, rain: true, skyline: ['#24344f', '#2b3d5a', '#33476a', '#f3c96a'],
+    greens: ['#0b1a17', '#10241e', '#173428', '#21463a', '#2f5e4a'], bcolors: ['#2f4c5e', '#3a4566', '#284556', '#33524a', '#43506a'],
+    roof: ['#5a3a44', '#4a2f3a', '#2a1a22'], street: '#1a2430', pattern: 'dots', wallTint: '#ff9a40', night: true },
+  spring: { paper: '#fdf6ee', sky: ['#8fc3ee', '#b9dbf5'], cloud: '#fdf6ee', skyline: ['#c9dcea', '#bdd2e4', '#dde9f3', '#ffffff'],
+    greens: ['#7a3f62', '#b8618a', '#e08aae', '#f5b3cc', '#ffe0ec'], bcolors: ['#e3a9ad', '#9fcdb8', '#e9cf8f', '#aab9e6', '#cdb4e0'],
+    roof: ['#6f86c0', '#5f75ad', '#3f4f80'], street: '#6a7486', pattern: 'stripes', wallTint: null, pastel: true },
+};
+const T = THEMES[THEME];
+const W = 400, H = 225, S = 4;
+const buf = new Array(W * H).fill('#1c3553');
+const skyMask = new Uint8Array(W * H);
+const texts = []; // hi-res text drawn after upscale
+
+// ---------- pixel primitives ----------
+function px(x, y, c) { x |= 0; y |= 0; if (x < 0 || y < 0 || x >= W || y >= H || !c) return; buf[y * W + x] = c; skyMask[y * W + x] = 0; }
+function rect(x, y, w, h, c) { for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) px(x + i, y + j, c); }
+function hline(x, y, w, c) { rect(x, y, w, 1, c); }
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+const R = rng(7);
+function hash(x, y) { const s = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return s - Math.floor(s); }
+function noise(x, y) {
+  const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+  const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+  const a = hash(xi, yi), b = hash(xi + 1, yi), c = hash(xi, yi + 1), d = hash(xi + 1, yi + 1);
+  return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+}
+const BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]];
+const hex = (c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16));
+const mix = (a, b, t) => { const A = hex(a), B = hex(b); return '#' + A.map((v, i) => Math.round(v + (B[i] - v) * t).toString(16).padStart(2, '0')).join(''); };
+const text = (str, x, y, opt = {}) => texts.push({ str, x, y, ...opt });
+
+// ---------- characters (procedural chibi sprites, auto-outlined) ----------
+function makeChar(c, pose = 'stand') {
+  const w = 16, h = 24, g = Array.from({ length: h }, () => Array(w).fill(null));
+  const set = (x, y, k) => { if (x >= 0 && y >= 0 && x < w && y < h) g[y][x] = k; };
+  const fill = (x, y, ww, hh, k) => { for (let j = 0; j < hh; j++) for (let i = 0; i < ww; i++) set(x + i, y + j, k); };
+  if (c.style === 'long') fill(2, 4, 12, 14, 'h');
+  // body
+  fill(7, 12, 2, 1, 's');
+  fill(4, 13, 8, 6, 't'); fill(10, 13, 2, 6, 'T');
+  if (pose === 'shocked') {
+    fill(2, 8, 1, 5, 't'); fill(13, 8, 1, 5, 't'); set(2, 7, 's'); set(13, 7, 's');
+  } else if (pose === 'forward') {
+    fill(3, 13, 1, 4, 't'); fill(12, 13, 1, 4, 'T'); set(4, 17, 't'); set(11, 17, 'T'); set(5, 18, 's'); set(10, 18, 's');
+  } else if (pose === 'stir') {
+    fill(3, 13, 1, 5, 't'); set(3, 18, 's'); fill(12, 14, 3, 1, 'T'); set(15, 14, 's');
+  } else if (pose === 'wave') {
+    fill(3, 13, 1, 5, 't'); set(3, 18, 's'); fill(12, 9, 1, 5, 'T'); set(12, 8, 's'); set(13, 8, 's');
+  } else {
+    fill(3, 13, 1, 5, 't'); fill(12, 13, 1, 5, 'T'); set(3, 18, 's'); set(12, 18, 's');
+  }
+  fill(5, 19, 6, 3, 'p'); fill(7, 21, 2, 1, null);
+  fill(4, 22, 3, 1, 'b'); fill(9, 22, 3, 1, 'b');
+  // head
+  fill(4, 2, 8, 1, 's'); fill(3, 3, 10, 8, 's'); fill(4, 11, 8, 1, 's'); fill(11, 4, 2, 7, 'S');
+  // hair
+  fill(5, 1, 6, 1, 'h'); fill(4, 2, 8, 1, 'h'); fill(3, 3, 10, 2, 'h'); set(6, 2, 'H'); set(7, 2, 'H'); set(5, 3, 'H');
+  fill(3, 5, 4, 1, 'h'); set(12, 5, 'h');
+  if (c.style === 'bob') { fill(2, 3, 1, 9, 'h'); fill(13, 3, 1, 9, 'h'); fill(3, 5, 1, 6, 'h'); fill(12, 5, 1, 6, 'h'); }
+  if (c.style === 'spiky') { set(4, 0, 'h'); set(7, 0, 'H'); set(10, 0, 'h'); fill(4, 1, 8, 1, 'h'); set(3, 2, 'h'); set(12, 2, 'h'); set(3, 6, 'h'); set(12, 6, 'h'); }
+  if (c.style === 'bun') { fill(6, 0, 4, 2, 'h'); set(7, 0, 'H'); }
+  if (c.style === 'long') { fill(2, 3, 1, 14, 'h'); fill(13, 3, 1, 14, 'h'); fill(3, 5, 1, 4, 'h'); fill(12, 5, 1, 4, 'h'); }
+  if (c.style === 'curly') { fill(2, 2, 12, 3, 'h'); set(2, 1, 'h'); set(5, 0, 'h'); set(9, 0, 'h'); set(13, 1, 'h'); fill(4, 1, 8, 1, 'h'); fill(2, 5, 1, 4, 'h'); fill(13, 5, 1, 4, 'h'); set(8, 1, 'H'); }
+  // face
+  if (pose === 'sleep') { fill(5, 7, 2, 1, 'e'); fill(9, 7, 2, 1, 'e'); }
+  else { fill(5, 6, 1, 2, 'e'); fill(10, 6, 1, 2, 'e'); }
+  set(4, 8, 'm'); set(11, 8, 'm');
+  if (pose === 'shocked') { fill(7, 9, 2, 2, 'M'); } else { fill(7, 9, 2, 1, 'M'); }
+  // outline
+  const o = g.map((r) => r.slice());
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+    if (g[y][x]) continue;
+    if ([[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => g[y + dy]?.[x + dx])) o[y][x] = 'o';
+  }
+  return o;
+}
+function palette(c) {
+  return { o: '#1a1622', h: c.hair, H: mix(c.hair, '#ffffff', 0.35), s: c.skin, S: mix(c.skin, '#5a2c3a', 0.18), e: '#1a1622', m: mix(c.skin, '#ff6f8a', 0.45), M: '#9b3b4f', t: c.top, T: mix(c.top, '#101020', 0.3), p: c.pants, b: '#2a2230' };
+}
+function drawChar(c, x, y, pose, { rot = false, rows = 24 } = {}) {
+  const g = makeChar(c, pose), pal = palette(c);
+  for (let j = 0; j < rows; j++) for (let i = 0; i < 16; i++) {
+    const k = g[j][i]; if (!k) continue;
+    if (rot) px(x + j, y + 15 - i, pal[k]); else px(x + i, y + j, pal[k]);
+  }
+}
+function miniHead(c, x, y) { drawChar(c, x, y, 'stand', { rows: 13 }); }
+
+const PEOPLE = {
+  asha: { name: 'ASHA', skin: '#c98d6a', hair: '#2b1d2e', style: 'bob', top: '#e86a5a', pants: '#3b4a6b' },
+  ben: { name: 'BEN', skin: '#f1c7a5', hair: '#7ed957', style: 'spiky', top: '#3d6fb6', pants: '#2f3550' },
+  chen: { name: 'CHEN', skin: '#f0cfa0', hair: '#1f1a24', style: 'bun', top: '#5fb08e', pants: '#4a3f5c' },
+  dani: { name: 'DANI', skin: '#6b4430', hair: '#e8dff5', style: 'long', top: '#26222e', pants: '#3a3448' },
+  me: { name: 'YOU', skin: '#a8714f', hair: '#3a2418', style: 'curly', top: '#f2b84b', pants: '#3b4a6b' },
+};
+
+// ---------- dialogue boxes (ref 1) and vote bubbles (ref 4) ----------
+function boxShape(x, y, w, h, fillC, border = '#14101c') {
+  hline(x + 1, y, w - 2, border); hline(x + 1, y + h - 1, w - 2, border);
+  rect(x, y + 1, 1, h - 2, border); rect(x + w - 1, y + 1, 1, h - 2, border);
+  rect(x + 1, y + 1, w - 2, h - 2, fillC);
+}
+function dialog(x, y, w, h, tailX, { tail = 'down', shadow = '#3bb5b0' } = {}) {
+  boxShape(x + 2, y + 2, w, h, shadow, shadow);
+  boxShape(x, y, w, h, '#ffffff');
+  rect(x + 2, y + h - 4, 2, 2, '#f39ac0'); rect(x + 5, y + h - 4, 2, 2, '#9ad0f3'); rect(x + 8, y + h - 4, 2, 2, '#f39ac0');
+  if (tail === 'down') {
+    for (let j = 0; j < 4; j++) { rect(tailX - 3 + j, y + h - 1 + j, 7 - 2 * j, 1, '#ffffff'); px(tailX - 4 + j, y + h - 1 + j, '#14101c'); px(tailX + 4 - j, y + h - 1 + j, '#14101c'); }
+    px(tailX, y + h + 3, '#14101c');
+  } else if (tail === 'left') {
+    for (let j = 0; j < 3; j++) { rect(x - j, y + 6 + j, 1, 5 - 2 * j, '#ffffff'); px(x - j, y + 5 + j, '#14101c'); px(x - j, y + 11 - j, '#14101c'); }
+    px(x - 3, y + 8, '#14101c');
+  }
+}
+const FONT_BODY = '30px VT', FONT_HEAD = '16px Silk';
+function measure(lines, font) { const ctx = document.createElement('canvas').getContext('2d'); ctx.font = font; return Math.max(...lines.map((l) => ctx.measureText(l).width)); }
+function wrap(str, maxPx) {
+  const ctx = document.createElement('canvas').getContext('2d'); ctx.font = FONT_BODY;
+  const out = []; let line = '';
+  for (const word of str.split(' ')) { const t = line ? line + ' ' + word : word; if (ctx.measureText(t).width > maxPx && line) { out.push(line); line = word; } else line = t; }
+  out.push(line); return out;
+}
+// speech box anchored so its tail points at (ax, ay)
+function speech(header, msg, ax, ay, { maxW = 78, color = '#e0457b' } = {}) {
+  const lines = wrap(msg, maxW * S - 24);
+  const wHi = Math.max(measure(lines, FONT_BODY), measure([header], FONT_HEAD)) + 24;
+  const w = Math.ceil(wHi / S), h = Math.ceil((14 + 18 + lines.length * 24 + 14) / S);
+  let x = Math.round(ax - w / 2); x = Math.max(6, Math.min(x, 392 - w));
+  const y = ay - h - 4;
+  dialog(x, y, w, h, ax);
+  text(header, x * S + 12, y * S + 22, { font: FONT_HEAD, color });
+  lines.forEach((l, i) => text(l, x * S + 12, y * S + 46 + i * 24, { font: FONT_BODY, color: '#2a2440' }));
+}
+function voteBubble(x, y, who) {
+  boxShape(x + 1, y + 1, 20, 17, '#3bb5b0', '#3bb5b0');
+  boxShape(x, y, 20, 17, '#ffffff');
+  for (let j = 0; j < 3; j++) { rect(x - j, y + 6 + j, 1, 5 - 2 * j, '#ffffff'); px(x - j, y + 5 + j, '#14101c'); px(x - j, y + 11 - j, '#14101c'); }
+  px(x - 3, y + 8, '#14101c');
+  miniHead(PEOPLE[who], x + 2, y + 2);
+}
+
+// ---------- scene ----------
+const VX = 4, VY = 18, VW = 392, VH = 170, GROUND = VY + 156;
+
+function drawSky() {
+  for (let y = VY; y < VY + VH; y++) for (let x = VX; x < VX + VW; x++) {
+    const ly = (y - VY) / VH;
+    const n = noise(x / 34, y / 13) * 0.65 + noise(x / 13, y / 6) * 0.35;
+    const cloud = Math.min(1, Math.max(0, (n - 0.5) / 0.22));
+    const d = 0.95 - ly * 0.55 - cloud * 1.05;
+    const on = d * 16 > BAYER[y % 4][x % 4];
+    const skyC = (ly * 16 > BAYER[(y + 2) % 4][(x + 1) % 4]) ? T.sky[1] : T.sky[0];
+    let c = on ? skyC : T.cloud;
+    if (T.stars && on && hash(x, y) > 0.985) c = '#f2f0c8';
+    buf[y * W + x] = c;
+    skyMask[y * W + x] = 1;
+  }
+}
+function drawSkyline() {
+  const r = rng(3);
+  let x = VX - 4;
+  while (x < VX + VW) {
+    const w = 10 + Math.floor(r() * 22), h = 34 + Math.floor(r() * 48);
+    const c = r() < 0.5 ? T.skyline[0] : T.skyline[1];
+    rect(x, GROUND - h, w, h, c);
+    for (let wy = GROUND - h + 3; wy < GROUND - 6; wy += 5) for (let wx = x + 2; wx < x + w - 2; wx += 4) {
+      const k = r(); const wc = k < 0.12 ? T.skyline[3] : k < 0.5 ? T.skyline[2] : c; px(wx, wy, wc); px(wx + 1, wy, wc);
+    }
+    x += w + Math.floor(r() * 3);
+  }
+}
+function drawTrees(seed, y0, density = 1) {
+  const r = rng(seed);
+  const greens = T.greens;
+  for (let i = 0; i < 260 * density; i++) {
+    const cx = VX + r() * VW, cy = y0 + r() * (GROUND - y0), rad = 3 + r() * 6;
+    for (let yy = -rad; yy <= rad; yy++) for (let xx = -rad; xx <= rad; xx++) {
+      if (xx * xx + yy * yy > rad * rad) continue;
+      const shade = Math.min(4, Math.max(0, Math.floor((1 - (yy + rad) / (2 * rad)) * 3 + r() * 2.2)));
+      if (r() < 0.82) px(cx + xx, cy + yy, greens[shade]);
+    }
+  }
+}
+function windows(bx, by, bw, bh, avoid, seed, night) {
+  const r = rng(seed);
+  for (let y = by + 4; y < by + bh - 8; y += 9) for (let x = bx + 4; x < bx + bw - 7; x += 8) {
+    if (avoid.some((a) => x + 6 > a.x && x < a.x + a.w && y + 7 > a.y && y < a.y + a.h)) continue;
+    const lit = (night || T.night) ? r() < (T.night ? 0.6 : 0.45) : r() < 0.1;
+    rect(x, y, 5, 6, '#22313c'); rect(x + 1, y + 1, 3, 4, lit ? '#f3d98a' : night ? '#3a4b66' : '#9fc3dc');
+    if (!lit && !night) px(x + 1, y + 1, '#d6e8f5');
+  }
+}
+function building(b) {
+  const top = GROUND - b.h;
+  if (b.roof) {
+    for (let j = 0; j < 12; j++) rect(b.x - 2 + Math.max(0, 11 - j) * 2 + 0, top - 12 + j, b.w + 4 - Math.max(0, 11 - j) * 4, 1, j === 11 ? T.roof[2] : (j % 3 === 0 ? T.roof[1] : T.roof[0]));
+  } else {
+    rect(b.x - 1, top - 2, b.w + 2, 2, mix(b.color, '#101820', 0.4));
+  }
+  rect(b.x, top, b.w, b.h, b.color);
+  rect(b.x + b.w - 3, top, 3, b.h, mix(b.color, '#101820', 0.25));
+  const room = { x: b.x + 5, y: top + 5, w: b.w - 10, h: 40 };
+  const plate = { x: b.x + 4, y: room.y + room.h + 3, w: b.w - 8, h: 7 };
+  windows(b.x, top, b.w - 3, b.h, [{ x: room.x - 2, y: room.y - 2, w: room.w + 4, h: room.h + 4 }, plate], b.seed, b.night);
+  // door
+  rect(b.x + Math.floor(b.w / 2) - 4, GROUND - 12, 8, 12, '#2a2230'); rect(b.x + Math.floor(b.w / 2) - 3, GROUND - 11, 6, 11, '#6d4c3d');
+  // cut-away room frame
+  rect(room.x - 2, room.y - 2, room.w + 4, room.h + 4, mix(b.color, '#0b1018', 0.55));
+  rect(room.x, room.y, room.w, room.h - 4, b.wall);
+  if (T.pattern === 'stripes') for (let x = room.x + 1; x < room.x + room.w; x += 4) rect(x, room.y, 1, room.h - 4, mix(b.wall, '#ffffff', 0.35));
+  if (T.pattern === 'dots') for (let y = room.y + 2; y < room.y + room.h - 6; y += 4) for (let x = room.x + 2 + (y % 8 ? 2 : 0); x < room.x + room.w; x += 4) px(x, y, mix(b.wall, '#000000', 0.12));
+  rect(room.x, room.y + room.h - 4, room.w, 4, b.floor);
+  if (T.pattern) { rect(room.x + 14, room.y + room.h - 2, 22, 2, b.rug || '#c85a7a'); for (let x = room.x + 15; x < room.x + 35; x += 3) px(x, room.y + room.h - 1, '#ffe0a0'); }
+  hline(room.x, room.y + room.h - 4, room.w, mix(b.floor, '#000', 0.25));
+  // location plate
+  rect(plate.x, plate.y, plate.w, plate.h, '#1c2a35');
+  text(b.tag, plate.x * S + 6, plate.y * S + 22, { font: '16px Silk', color: '#e8f0ff' });
+  return { ...room, floorY: room.y + room.h - 4, top };
+}
+function windowPane(x, y, w, h, sky, extra) {
+  rect(x - 1, y - 1, w + 2, h + 2, '#5a4a3e'); rect(x, y, w, h, sky);
+  rect(x + Math.floor(w / 2), y, 1, h, '#5a4a3e'); extra?.();
+}
+function lamp(x, y, on = true) { rect(x, y, 1, 4, '#3a3040'); rect(x - 2, y + 4, 5, 2, on ? '#f6e3a1' : '#55506a'); if (on) { px(x - 3, y + 6, '#fff5d0'); px(x + 3, y + 6, '#fff5d0'); } }
+
+// ---------- frame (ref 2) and control bar (ref 3, original design) ----------
+function frame(title) {
+  rect(0, 0, W, H, '#1c3553');
+  rect(2, 2, W - 4, 13, '#6e93b9');
+  hline(2, 2, W - 4, '#8fb0d2');
+  rect(5, 4, 7, 9, '#f2f5fb'); rect(10, 4, 2, 2, '#c5d0e3'); hline(6, 8, 4, '#c5d0e3'); hline(6, 10, 4, '#c5d0e3');
+  text(title, 16 * S, 13 * S, { font: '40px Silk', color: '#dfe8ff' });
+  const btn = (x, icon) => { rect(x, 3, 11, 11, '#a7b5a8'); icon(x); };
+  btn(359, (x) => rect(x + 3, 10, 5, 2, '#1b2a33'));
+  btn(372, (x) => { rect(x + 2, 4, 7, 7, '#1b2a33'); rect(x + 3, 6, 5, 4, '#a7b5a8'); });
+  btn(385, (x) => { for (let i = 0; i < 6; i++) { rect(x + 2 + i, 4 + i, 2, 1, '#1b2a33'); rect(x + 7 - i, 4 + i, 2, 1, '#1b2a33'); } });
+  rect(VX - 1, VY - 1, VW + 2, VH + 2, '#2c5078');
+}
+function bevel(x, y, w, h, c = '#c3c6cf', pressed = false) {
+  rect(x, y, w, h, c);
+  hline(x, y, w, pressed ? '#6c707b' : '#f4f5f8'); rect(x, y, 1, h, pressed ? '#6c707b' : '#f4f5f8');
+  hline(x, y + h - 1, w, pressed ? '#f4f5f8' : '#6c707b'); rect(x + w - 1, y, 1, h, pressed ? '#f4f5f8' : '#6c707b');
+}
+const ICONS = {
+  prev: ['..#...#', '.##..##', '###.###', '.##..##', '..#...#'],
+  next: ['#...#..', '##..##.', '###.###', '##..##.', '#...#..'],
+  rec: ['.###.', '#####', '#####', '#####', '.###.'],
+  heart: ['.##.##.', '#######', '#######', '.#####.', '..###..', '...#...'],
+  pad: ['.#####.', '#.#####', '###.#.#', '#.#####', '.##.##.'],
+};
+function icon(name, x, y, c) { ICONS[name].forEach((r, j) => [...r].forEach((ch, i) => ch === '#' && px(x + i, y + j, c))); }
+ICONS.rose = ['.#.#.', '#####', '.###.', '..#..', '.##..', '..#..'];
+ICONS.choc = ['#######', '#.#.#.#', '#######', '#.#.#.#', '#######'];
+function giftBubble(x, y, kind) {
+  boxShape(x + 1, y + 1, 14, 14, '#3bb5b0', '#3bb5b0');
+  boxShape(x, y, 14, 14, '#ffffff');
+  for (let j = 0; j < 3; j++) { rect(x + 4 + j, y + 13 + j, 5 - 2 * j, 1, '#ffffff'); px(x + 3 + j, y + 13 + j, '#14101c'); px(x + 9 - j, y + 13 + j, '#14101c'); }
+  const red = '#e8405a', pink = '#ff8fb0', g = '#3f8a4a';
+  rect(x + 5, y + 3, 4, 3, red); px(x + 4, y + 4, red); px(x + 9, y + 4, red); px(x + 6, y + 3, pink); px(x + 7, y + 4, '#a82040');
+  rect(x + 7, y + 6, 1, 5, g); rect(x + 5, y + 8, 2, 1, g); rect(x + 8, y + 9, 2, 1, g);
+}
+function car(x, y) {
+  const body = '#f2c94c', dark = '#1a1622';
+  rect(x + 1, y + 3, 26, 6, dark); rect(x + 2, y + 4, 24, 4, body);
+  rect(x + 6, y, 14, 4, dark); rect(x + 7, y + 1, 12, 3, body);
+  rect(x + 8, y + 1, 5, 3, '#9fd8f5'); rect(x + 14, y + 1, 4, 3, '#9fd8f5');
+  rect(x + 15, y + 1, 2, 2, '#3a2418'); px(x + 15, y + 3, '#a8714f'); px(x + 16, y + 3, '#a8714f');
+  rect(x + 24, y + 5, 2, 1, '#fff5c0'); px(x + 2, y + 5, '#e05050');
+  for (const wx of [x + 5, x + 20]) { rect(wx, y + 8, 4, 3, dark); px(wx + 1, y + 9, '#8a8a99'); }
+  px(x - 3, y + 7, '#cfd4dc'); px(x - 6, y + 6, '#cfd4dc'); px(x - 5, y + 8, '#e4e7ec');
+}
+function controlBar(lcdLines, buttons) {
+  bevel(2, 190, W - 4, 33, '#b9bcc6');
+  rect(4, 192, W - 8, 2, '#d7d9e0');
+  for (let i = 0; i < 4; i++) hline(150, 192 + i * 0, 0, '#000');
+  // LCD
+  rect(7, 196, 150, 23, '#0e1f1a'); rect(8, 197, 148, 21, '#122a22');
+  lcdLines.forEach((l, i) => text(l, 9 * S + 4, 197 * S + 30 + i * 36, { font: i ? '32px VT' : '16px Silk', color: i ? '#8dffb0' : '#58c487' }));
+  let x = 164;
+  for (const b of buttons) {
+    bevel(x, 197, b.w, 21, b.primary ? '#9fc0e8' : '#c3c6cf');
+    if (b.icon) icon(b.icon, x + (b.label ? 5 : Math.floor((b.w - ICONS[b.icon][0].length) / 2)), 205, b.iconColor || '#1b2a33');
+    if (b.label) text(b.label, (x + (b.icon ? 15 : 6)) * S, 212 * S, { font: '20px Silk', color: '#1b2a33' });
+    x += b.w + 3;
+  }
+}
+
+// ---------- compose ----------
+function compose() {
+  const game = MODE === 'game';
+  frame(game ? 'COLLEGE_GANG.LYF  -  GAME NIGHT' : 'COLLEGE_GANG.LYF');
+  drawSky();
+  drawSkyline();
+  drawTrees(11, GROUND - 46, 0.8);
+
+  const B = [
+    { id: 'asha', x: 10, w: 74, h: 110, color: '#4b7a86', wall: '#f3dcae', floor: '#a8774f', tag: 'TORONTO 8:40PM', seed: 1, night: true },
+    { id: 'ben', x: 92, w: 70, h: 72, color: '#5b6e8c', wall: game ? '#4a4f7a' : '#2e3358', floor: '#3d3a4f', tag: 'LEEDS 1:40AM', seed: 2, night: true, roof: true },
+    { id: 'chen', x: 172, w: 72, h: 118, color: '#3f6878', wall: '#f6e6c8', floor: '#b88a5a', tag: 'SINGAPORE 9:40AM', seed: 3, night: false },
+    { id: 'dani', x: 254, w: 70, h: 96, color: '#557e6a', wall: '#e9c9a8', floor: '#8a5a3c', tag: 'AUSTIN 7:40PM', seed: 4, night: true },
+    { id: 'me', x: 332, w: 58, h: 64, color: '#6d7f99', wall: '#dfe3f0', floor: '#9b7a5a', tag: 'YOU', seed: 5, night: true, roof: true },
+  ].map((b, i) => ({ ...b, x: b.x + VX, color: T.bcolors[i], wall: T.wallTint && b.id !== 'ben' ? mix(b.wall, T.wallTint, 0.22) : (T.pastel ? mix(b.wall, '#ffffff', 0.3) : b.wall), rug: ['#c85a7a', '#5b86d6', '#5fb08e', '#e0913a', '#8a6bb8'][i] }));
+  const GIFT = THEME === 'sunset', DRIVE = THEME === 'spring';
+  const rooms = {};
+  for (const b of B) { rooms[b.id] = building(b); ROOMS.push(rooms[b.id]); }
+  // foreground bushes between buildings
+  drawTrees(23, GROUND - 14, 0.25);
+  // street
+  rect(VX, GROUND, VW, 3, '#8a9aa3'); rect(VX, GROUND + 3, VW, VH - 159, T.street);
+  for (let x = VX + 4; x < VX + VW; x += 14) rect(x, GROUND + 8, 6, 1, '#c9c48a');
+
+  // --- Asha: kitchen ---
+  let r = rooms.asha;
+  windowPane(r.x + 4, r.y + 5, 14, 12, '#23325e', () => { px(r.x + 7, r.y + 8, '#f2f0c8'); px(r.x + 14, r.y + 12, '#f2f0c8'); });
+  lamp(r.x + 34, r.y);
+  rect(r.x + 42, r.floorY - 14, 18, 14, '#d9d9e0'); rect(r.x + 42, r.floorY - 15, 18, 2, '#4a4a58'); rect(r.x + 45, r.floorY - 9, 12, 7, '#2a2a34'); rect(r.x + 46, r.floorY - 8, 10, 5, '#f08a4a');
+  rect(r.x + 45, r.floorY - 21, 12, 6, '#4a4a58'); rect(r.x + 44, r.floorY - 21, 14, 1, '#6a6a78');
+  if (!game) { px(r.x + 48, r.floorY - 24, '#ffffff'); px(r.x + 50, r.floorY - 26, '#ffffff'); px(r.x + 53, r.floorY - 25, '#ffffff'); px(r.x + 51, r.floorY - 29, '#ffffff'); }
+  if (!GIFT) drawChar(PEOPLE.asha, r.x + 26, r.floorY - 24, game ? 'stand' : 'stir');
+  if (!game) { rect(r.x + 42, r.floorY - 15 - 10, 1, 9, '#8a5a3c'); }
+
+  // --- Ben: bedroom ---
+  r = rooms.ben;
+  windowPane(r.x + 42, r.y + 5, 12, 12, '#1a2244', () => { rect(r.x + 45, r.y + 7, 3, 3, '#f2f0c8'); });
+  rect(r.x + 3, r.y + 6, 4, 5, '#e8c34a'); px(r.x + 5, r.y + 4, '#c33'); px(r.x + 5, r.y + 5, '#c33');
+  rect(r.x + 3, r.floorY - 8, 40, 4, '#7a5a44'); rect(r.x + 3, r.floorY - 4, 2, 4, '#5a4030'); rect(r.x + 41, r.floorY - 4, 2, 4, '#5a4030');
+  rect(r.x + 3, r.floorY - 14, 3, 6, '#5a4030');
+  rect(r.x + 6, r.floorY - 11, 9, 3, '#e8e8f0');
+  if (game) {
+    drawChar(PEOPLE.ben, r.x + 8, r.floorY - 32, 'forward', { rows: 19 });
+    rect(r.x + 4, r.floorY - 14, 38, 6, '#c85a5a'); hline(r.x + 4, r.floorY - 14, 38, '#e07070');
+    rect(r.x + 14, r.floorY - 17, 4, 3, '#9fe0ff'); px(r.x + 13, r.floorY - 18, '#cff0ff');
+  } else {
+    drawChar(PEOPLE.ben, r.x + 5, r.floorY - 26, 'sleep', { rot: true });
+    rect(r.x + 18, r.floorY - 15, 25, 7, '#c85a5a'); hline(r.x + 18, r.floorY - 15, 25, '#e07070');
+    rect(r.x + 50, r.floorY - 3, 4, 2, '#e86a5a'); rect(r.x + 55, r.floorY - 3, 4, 2, '#e86a5a');
+  }
+
+  // --- Chen: pottery studio ---
+  r = rooms.chen;
+  windowPane(r.x + 4, r.y + 5, 16, 13, '#8cc4ea', () => { rect(r.x + 6, r.y + 7, 4, 2, '#ffffff'); });
+  rect(r.x + 30, r.y + 8, 30, 2, '#8a5a3c');
+  ['#e86a5a', '#5b86d6', '#f2b84b', '#5fb08e'].forEach((c, i) => { rect(r.x + 32 + i * 7, r.y + 3, 5, 5, c); px(r.x + 32 + i * 7 + (i % 2 ? 4 : 0), r.y + 3, '#f6e6c8'); });
+  if (!game) {
+    rect(r.x + 36, r.floorY - 10, 18, 10, '#6a6f7a'); rect(r.x + 34, r.floorY - 11, 22, 2, '#4a4f5a');
+    rect(r.x + 40, r.floorY - 17, 10, 6, '#b7a59a'); rect(r.x + 41, r.floorY - 18, 8, 1, '#8a786e');
+    rect(r.x + 22, r.floorY - 8, 8, 2, '#8a5a3c'); rect(r.x + 23, r.floorY - 6, 1, 6, '#5a4030'); rect(r.x + 28, r.floorY - 6, 1, 6, '#5a4030');
+    drawChar(PEOPLE.chen, r.x + 20, r.floorY - 27, 'forward');
+  } else drawChar(PEOPLE.chen, r.x + 22, r.floorY - 24, 'stand');
+
+  // --- Dani: living room ---
+  r = rooms.dani;
+  windowPane(r.x + 42, r.y + 5, 14, 12, '#3a3a6e', () => { px(r.x + 46, r.y + 9, '#f2f0c8'); });
+  rect(r.x + 3, r.floorY - 10, 22, 6, '#6b7fb0'); rect(r.x + 3, r.floorY - 14, 4, 10, '#5a6c9a'); rect(r.x + 3, r.floorY - 4, 22, 2, '#4a5a80');
+  rect(r.x + 10, r.floorY - 13, 6, 3, '#e0913a'); px(r.x + 10, r.floorY - 14, '#e0913a'); px(r.x + 13, r.floorY - 14, '#e0913a'); px(r.x + 16, r.floorY - 12, '#e0913a');
+  lamp(r.x + 52, r.y);
+  drawChar(PEOPLE.dani, r.x + 30, r.floorY - 24, game ? 'shocked' : 'stand');
+  if (!game) {
+    rect(r.x + 31, r.floorY - 9, 8, 6, '#b5652e'); rect(r.x + 33, r.floorY - 8, 2, 2, '#3a2010');
+    for (let i = 0; i < 9; i++) px(r.x + 39 + i, r.floorY - 9 - Math.floor(i / 2), '#5a3a20');
+  }
+
+  // --- You: desk ---
+  r = rooms.me;
+  rect(r.x + 18, r.floorY - 12, 26, 2, '#8a5a3c'); rect(r.x + 19, r.floorY - 10, 1, 10, '#5a4030'); rect(r.x + 42, r.floorY - 10, 1, 10, '#5a4030');
+  rect(r.x + 26, r.floorY - 19, 12, 7, '#2a2a34'); rect(r.x + 27, r.floorY - 18, 10, 5, '#7fd0ff');
+  if (!DRIVE) drawChar(PEOPLE.me, r.x + 3, r.floorY - 24, game ? 'wave' : 'stand');
+
+  if (!game) {
+    if (!GIFT) speech('ASHA', 'making pasta for the 1st time!! pray 4 me', rooms.asha.x + 34, rooms.asha.top - 2, { maxW: 80 });
+    speech('BEN', 'zzz... ran 21k today. wake me never', rooms.ben.x + 14, rooms.ben.top - 14, { maxW: 70 });
+    speech('CHEN', 'wonky mug #5 in progress', rooms.chen.x + 30, rooms.chen.top - 2, { maxW: 62 });
+    speech('DANI', '3 chords down. the cat is not a fan', rooms.dani.x + 34, rooms.dani.top - 2, { maxW: 66 });
+    if (!DRIVE) speech('YOU', '+ share what you\'re up to', rooms.me.x + 20, rooms.me.top - 14, { maxW: 50, color: '#2c7fb8' });
+    if (GIFT) {
+      const ax = VX + 312, ay = GROUND + 2 - 23;
+      drawChar(PEOPLE.asha, ax, ay, 'forward');
+      // bouquet
+      [[6, 14, '#e8405a'], [8, 13, '#ff8fb0'], [10, 14, '#e8405a'], [7, 15, '#ffd0e0'], [9, 15, '#e8405a']].forEach(([dx, dy, c]) => { rect(ax + dx, ay + dy, 2, 2, c); });
+      rect(ax + 8, ay + 17, 1, 3, '#3f8a4a');
+      for (let i = 0; i < 4; i++) px(ax - 3 - i * 3, ay + 22, '#d8c8d8');
+      giftBubble(ax + 1, ay - 20, 'rose');
+      speech('ASHA', 'omw with flowers for you!! (only you can see this)', ax + 8, ay - 22, { maxW: 76 });
+    }
+    if (DRIVE) {
+      const cx = VX + 118, cy = GROUND + 4;
+      car(cx, cy);
+      speech('YOU', 'cruising... next stop: chen\'s place', cx + 12, cy - 2, { maxW: 64, color: '#2c7fb8' });
+    }
+    controlBar(GIFT ? ['INCOMING', 'asha is coming over'] : DRIVE ? ['CRUISE MODE', 'chen in 2 blocks'] : ['NOW SHOWING', '4 of 5 shared today'], GIFT ? [
+      { icon: 'rose', label: 'FLOWERS', w: 62, primary: true, iconColor: '#e8405a' },
+      { icon: 'choc', label: 'CHOCO', w: 52, iconColor: '#7a4a2e' },
+      { icon: 'heart', label: 'HOW R U', w: 62, iconColor: '#d23a5a' },
+    ] : DRIVE ? [
+      { icon: 'prev', w: 17 }, { icon: 'next', w: 17 },
+      { label: 'STOP + SAY HI', w: 92, primary: true },
+      { icon: 'pad', label: 'PLAY', w: 47 },
+    ] : [
+      { icon: 'prev', w: 17 }, { icon: 'next', w: 17 },
+      { icon: 'rec', label: 'SHARE', w: 52, primary: true, iconColor: '#d23a4a' },
+      { icon: 'heart', label: 'REACT', w: 52, iconColor: '#d23a5a' },
+      { icon: 'pad', label: 'PLAY', w: 47 },
+    ]);
+  } else {
+    // big prompt box in the sky
+    const lines = wrap('who\'s most likely to show up late to their own wedding?', 200 * S - 24);
+    const w = 206, h = Math.ceil((14 + 18 + lines.length * 24 + 30 + 12) / S);
+    const x = Math.round(VX + VW / 2 - w / 2) - 30, y = VY + 4;
+    dialog(x, y, w, h, 0, { tail: 'none' });
+    text('ROUND 1/5  -  MOST LIKELY TO', x * S + 12, y * S + 22, { font: FONT_HEAD, color: '#e0457b' });
+    lines.forEach((l, i) => text(l, x * S + 12, y * S + 46 + i * 24, { font: FONT_BODY, color: '#2a2440' }));
+    text('>> the room picked DANI! (4 votes)', x * S + 12, y * S + 46 + lines.length * 24 + 10, { font: FONT_BODY, color: '#2c7fb8' });
+    const votes = { asha: 'dani', ben: 'dani', chen: 'dani', dani: 'ben', me: 'dani' };
+    voteBubble(rooms.asha.x + 45, rooms.asha.y + 6, votes.asha);
+    voteBubble(rooms.ben.x + 27, rooms.ben.y + 3, votes.ben);
+    voteBubble(rooms.chen.x + 41, rooms.chen.y + 12, votes.chen);
+    voteBubble(rooms.dani.x + 49, rooms.dani.y + 18, votes.dani);
+    voteBubble(rooms.me.x + 22, rooms.me.y + 2, votes.me);
+    controlBar(['GAME NIGHT', 'votes 5/5  dani: 4  ben: 1'], [
+      { icon: 'heart', label: 'REACT', w: 52, iconColor: '#d23a5a' },
+      { icon: 'next', label: 'NEXT', w: 50, primary: true },
+      { label: 'LEAVE', w: 46 },
+      { icon: 'pad', w: 22 },
+    ]);
+  }
+}
+
+function rain() {
+  if (!T.rain) return;
+  const rr = rng(99);
+  for (let i = 0; i < 260; i++) {
+    const x = VX + Math.floor(rr() * VW), y = VY + Math.floor(rr() * (VH - 16)), len = 3 + Math.floor(rr() * 4);
+    for (let j = 0; j < len; j++) { const k = (y + j) * W + x; if (!insideRoom(x, y + j) && !['#ffffff', '#14101c', '#3bb5b0', '#f39ac0', '#9ad0f3'].includes(buf[k])) px(x, y + j, '#8fa9c8'); }
+  }
+}
+const ROOMS = [];
+function insideRoom(x, y) { return ROOMS.some((r) => x >= r.x - 2 && x < r.x + r.w + 2 && y >= r.y - 2 && y < r.y + r.h + 2); }
+async function render() {
+  await document.fonts.load(FONT_BODY); await document.fonts.load(FONT_HEAD); await document.fonts.load('40px Silk');
+  compose();
+  const keep = skyMask.slice(); rain(); skyMask.set(keep.map((v, i) => v && buf[i] !== '#8fa9c8' ? 1 : 0));
+  const cv = document.getElementById('hi'); cv.width = W * S; cv.height = H * S;
+  const ctx = cv.getContext('2d');
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const c = buf[y * W + x];
+    if (skyMask[y * W + x]) {
+      // ref 3: blue dots printed on white
+      ctx.fillStyle = T.paper; ctx.fillRect(x * S, y * S, S, S);
+      if (c !== T.paper) { ctx.fillStyle = c; ctx.fillRect(x * S, y * S, S - 1, S - 1); }
+    } else {
+      ctx.fillStyle = mix(c, '#000000', 0.12); ctx.fillRect(x * S, y * S, S, S);
+      ctx.fillStyle = c; ctx.fillRect(x * S, y * S, S - 1, S - 1);
+    }
+  }
+  for (const t of texts) { ctx.font = t.font; ctx.fillStyle = t.color; ctx.fillText(t.str, t.x, t.y); }
+  document.title = 'done';
+}
+render();
+</script>
