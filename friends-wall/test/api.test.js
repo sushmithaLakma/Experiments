@@ -100,3 +100,45 @@ test('unknown circle and path traversal are rejected', async () => {
   assert.equal((await fetch(`${base}/media/..%2Fdb.json`)).status, 404);
   assert.equal((await fetch(`${base}/c/ANYCODE`)).status, 200);
 });
+
+test('street: profiles, gifts only reach the receiver, replies reach the sender', async () => {
+  const { body: c } = await post('/api/circles', { name: 'Street' });
+  const a = (await post(`/api/circles/${c.id}/join`, { name: 'Asha' })).body;
+  const b = (await post(`/api/circles/${c.id}/join`, { name: 'Ben' })).body;
+  const d = (await post(`/api/circles/${c.id}/join`, { name: 'Dani' })).body;
+  const put = (me, body) => fetch(`${base}/api/circles/${c.id}/me`, { method: 'PUT', headers: { 'content-type': 'application/json', ...auth(me) }, body: JSON.stringify(body) }).then(json);
+
+  const p = await put(a, { look: { skin: '#C98D6A', hair: 'javascript:x', style: 'bob' }, tz: 'Asia/Tokyo', activity: 'cook', msg: 'making pasta', answered: true });
+  assert.equal(p.status, 200);
+  assert.deepEqual(p.body.look, { skin: '#c98d6a', style: 'bob' }); // bad color dropped
+  assert.equal(p.body.tz, 'Asia/Tokyo');
+  assert.equal(p.body.msg, 'making pasta');
+  assert.ok(p.body.msgAt > 0);
+  assert.equal((await put(a, { tz: 'Not/AZone' })).body.tz, 'Asia/Tokyo'); // invalid tz ignored
+
+  const g = await post(`/api/circles/${c.id}/gifts`, { to: b.friendId, kind: 'flowers', note: 'for you' }, auth(a));
+  assert.equal(g.status, 201);
+  assert.equal((await post(`/api/circles/${c.id}/gifts`, { to: a.friendId, kind: 'flowers' }, auth(a))).status, 400);
+  assert.equal((await post(`/api/circles/${c.id}/gifts`, { to: b.friendId, kind: 'cash' }, auth(a))).status, 400);
+
+  const gifts = (me) => fetch(`${base}/api/circles/${c.id}/gifts`, { headers: auth(me) }).then(json);
+  assert.equal((await gifts(b)).body.incoming.length, 1);
+  assert.equal((await gifts(d)).body.incoming.length, 0); // Dani can't see Ben's gift
+  // only the receiver can open it
+  assert.equal((await post(`/api/circles/${c.id}/gifts/${g.body.id}/seen`, { reply: 'hi' }, auth(d))).status, 404);
+  assert.equal((await post(`/api/circles/${c.id}/gifts/${g.body.id}/seen`, { reply: 'thank you!!' }, auth(b))).status, 200);
+  assert.equal((await gifts(b)).body.incoming.length, 0);
+  assert.equal((await gifts(a)).body.replies[0].reply, 'thank you!!');
+  // the public street never includes gifts or tokens
+  const state = await fetch(`${base}/api/circles/${c.id}`).then(json);
+  assert.ok(!JSON.stringify(state.body).includes('thank you'));
+  assert.ok(!JSON.stringify(state.body).includes(a.token));
+});
+
+test('pages: street at / and /s/CODE, video wall at /wall and /c/CODE', async () => {
+  for (const [path, marker] of [['/', 'Friends Street'], ['/s/ABC123', 'Friends Street'], ['/wall', 'Friends Wall'], ['/c/ABC123', 'Friends Wall']]) {
+    const res = await fetch(base + path);
+    assert.equal(res.status, 200, path);
+    assert.match(await res.text(), new RegExp(`<title>${marker}</title>`), path);
+  }
+});

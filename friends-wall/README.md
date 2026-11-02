@@ -20,6 +20,20 @@ As we get older we drift apart. Everyone's busy, nobody posts, and "we should ca
 - **Low pressure**: moments disappear after 24 hours. You can remove your own any time.
 - Works on phones (installable as a home-screen app) and desktop. No build step, no dependencies.
 
+## Friends Street (the main app now)
+
+The pixel-art street from [docs/IDEAS.md](docs/IDEAS.md) is the main app at `/`. It needs no accounts:
+
+- Open `/` to look around a demo street with sample friends, or start a street for your group.
+- Starting a street gives an invite link like `/s/ABC123`. Anyone who opens it types a name, makes a little character, and moves in. Their browser remembers them.
+- Every day it asks "what are you up to?". Answers show up in each friend's window on everyone's screen, live.
+- Send flowers, chocolates or a "how are you?". The receiver watches the sender walk over, and can write back. The server only gives a gift to the person it's for.
+- Drive down the street, past shops, stopping at each friend's place. Change the sky (follows your time of day, or pick rain or blossom).
+
+The original video wall is still at `/wall` (and `/c/CODE` links).
+
+Limits of this trial version: anyone with a street's link can move in, there's no way to remove someone yet, and a person who switches browser or device moves in again as a new neighbor.
+
 ## Run it
 
 Requires Node.js 18 or newer.

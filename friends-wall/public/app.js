@@ -256,7 +256,7 @@ function renderWall() {
   const sharedToday = new Set(c.moments.map((m) => m.friendId)).size;
   app.replaceChildren(
     h('header', { class: 'topbar' },
-      h('a', { class: 'home', href: '/', title: 'All circles', onclick: (e) => { e.preventDefault(); go('/'); } }, '◧'),
+      h('a', { class: 'home', href: '/wall', title: 'All circles', onclick: (e) => { e.preventDefault(); go('/wall'); } }, '◧'),
       h('h1', {}, c.name, h('small', {}, `${sharedToday} of ${c.friends.length} shared today`)),
       h('button', { class: 'ghost', onclick: shareInvite }, 'Invite'),
     ),

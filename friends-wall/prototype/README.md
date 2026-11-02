@@ -1,4 +1,6 @@
-# Friends Street prototype
+# Friends Street prototype (claude.ai version)
+
+> The main version now runs on this project's own server with **no accounts needed**: see the main README. This file is the earlier claude.ai artifact version, kept for reference.
 
 A clickable trial version of the scrolling pixel street, built to find out whether people like the idea. It's one HTML file, published as a claude.ai artifact so it can be shared as a link without hosting anything.
 

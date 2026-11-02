@@ -762,7 +762,7 @@ function el(tag, attrs = {}, ...kids) {
   return e;
 }
 function openDialog(children, onClose) {
-  dlgIn.replaceChildren(...children, el('div', { class: 'dots', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')));
+  dlgIn.replaceChildren(...children.flat().filter(Boolean), el('div', { class: 'dots', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')));
   dlg.onclose = onClose || null;
   if (!dlg.open) dlg.showModal();
   dlgIn.querySelector('input,button')?.focus();
