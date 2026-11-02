@@ -60,7 +60,11 @@ An earlier depth version had a smaller, hazy back row and small icon bubbles in 
 
 If the back row were the same size as the front row, two rows of rooms plus dialogue boxes would need about 20 more pixels of height than the window has.
 
+## Decided
+
+- **Scrolling street (A)** for groups. A clickable trial version lives in [`prototype/`](../prototype/README.md).
+
 ## Still to decide
 
-- Scrolling street (A) or two rows (B) for big groups
 - Which sky and weather looks to offer first
+- Whether friends should also share short video clips in their room (the original Friends Wall idea)
