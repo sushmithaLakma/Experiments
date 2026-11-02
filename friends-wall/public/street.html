@@ -453,7 +453,7 @@ function drawHouse(it, sky) {
   else windowPane(r.x + 4, r.y + 5, 14, 12, p.tz);
   if (!(it.isMe && state.driving)) (ROOM[p.activity] || ROOM.chill)(r, p.look);
   rect(plate.x, plate.y, plate.w, plate.h, '#1c2a35');
-  text(it.isMe ? `YOU ${localTime(p.tz)}` : `${cityOf(p)} ${localTime(p.tz)}`, plate.x + 1.5, plate.y + 5.5, 4, SILK, '#e8f0ff');
+  text(it.isMe ? `YOU ${localTime(p.tz)}` : p.npc ? `NEIGHBOR ${localTime(p.tz)}` : `${cityOf(p)} ${localTime(p.tz)}`, plate.x + 1.5, plate.y + 5.5, 4, SILK, '#e8f0ff');
   it.room = r;
 }
 const SHOP_KINDS = [
@@ -519,6 +519,15 @@ const DEMO_PEOPLE = [
   { id: 'd-leo', name: 'Leo', look: { skin: '#d9a27a', hair: '#5a3820', style: 'spiky', top: '#e05050' }, tz: 'America/Sao_Paulo', activity: 'workout', msg: 'leg day. send help', ago: 25 },
   { id: 'd-omar', name: 'Omar', look: { skin: '#8a5a3c', hair: '#1a1418', style: 'curly', top: '#e8e0d0' }, tz: 'Asia/Dubai', activity: 'bake', msg: 'first batch of bread is in the oven', ago: 10 },
 ].map((p, i) => ({ ...p, msgAt: Date.now() - p.ago * 60000, joinedAt: i }));
+// Friendly sample neighbors so a new street doesn't feel empty. They move out as real friends move in.
+const NEIGHBORS = [
+  { id: 'n-rosa', name: 'Rosa', look: { skin: '#c98d6a', hair: '#5a3820', style: 'bun', top: '#f0a0b8' }, tz: 'America/Mexico_City', activity: 'bake', msg: 'baked too many cinnamon rolls. come by!', ago: 35 },
+  { id: 'n-theo', name: 'Theo', look: { skin: '#f1c7a5', hair: '#e3a64a', style: 'curly', top: '#5b86d6' }, tz: 'Europe/Lisbon', activity: 'music', msg: 'practicing the same song for 3 days', ago: 80 },
+  { id: 'n-jo', name: 'Nana Jo', look: { skin: '#8a5a3c', hair: '#e8dff5', style: 'bob', top: '#5fb08e' }, tz: 'Australia/Sydney', activity: 'plants', msg: 'my tomatoes are finally red!!', ago: 140 },
+  { id: 'n-kai', name: 'Kai', look: { skin: '#f0cfa0', hair: '#1f1a24', style: 'spiky', top: '#f2b84b' }, tz: 'Asia/Seoul', activity: 'chill', msg: 'night shift done. snacks then bed', ago: 20 },
+].map((p, i) => ({ ...p, npc: true, msgAt: Date.now() - p.ago * 60000, joinedAt: 1e15 + i }));
+const NEIGHBOR_REPLIES = ['aww, thank you neighbor!', 'you\'re sweet. come say hi anytime', 'this made my whole day', 'ha! thank you. tell your friends to move in!'];
+function neighborsFor(realCount) { return state.mode === 'live' ? NEIGHBORS.slice(0, Math.max(0, Math.min(4, 6 - realCount))) : []; }
 const DEMO_REPLIES = ['aww thank you!! you made my day', "omg hiii. i'm good! tired but good", 'stoppp this is so cute', 'thank you!! call this weekend?', 'you remembered!! love you'];
 const MY_TZ = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
 const DEFAULT_LOOK = { skin: '#a8714f', hair: '#3a2418', style: 'curly', top: '#f2b84b' };
@@ -553,7 +562,8 @@ function buildItems() {
   const pushShop = () => { const kind = SHOP_KINDS[shopI % SHOP_KINDS.length]; list.push({ type: 'shop', kind, x, w: 56, top: 96 + (shopI * 7) % 14, seed: 100 + shopI }); x += 62; shopI++; };
   const pushHouse = (p, isMe) => { const h = strHash(p.id); list.push({ type: 'house', person: p, isMe, x, w: 74, top: 70 + (h % 5) * 7, roof: !!(h & 8), color: PASTELS[(h >>> 4) % PASTELS.length] }); x += 80; };
   if (state.me) pushHouse(state.me, true);
-  others.forEach((p, i) => { pushHouse(p, false); if (i % 2 === 1) pushShop(); });
+  const all = [...others, ...neighborsFor(state.people.size)];
+  all.forEach((p, i) => { pushHouse(p, false); if (i % 2 === 1) pushShop(); });
   if (state.mode !== 'demo') { list.push({ type: 'lot', x, w: 70 }); x += 76; }
   while (x < viewW + 20 || shopI < 2) pushShop();
   items = list; TW = x + 4;
@@ -572,7 +582,7 @@ function renderStreet() {
     const p = it.person, fresh = p.msgAt && Date.now() - p.msgAt < 20 * 3600000;
     const ay = it.top - (it.roof ? 14 : 3), ax = it.x + it.w / 2;
     if (it.isMe) it.box = say('YOU', state.driving ? 'out for a drive. back soon!' : fresh ? p.msg : "tap here: what are you up to?", ax, ay, { color: '#2c7fb8', body: fresh || state.driving ? '#2a2440' : '#6f6880' });
-    else it.box = say(String(p.name || 'FRIEND').toUpperCase(), fresh ? p.msg : 'no update yet today', ax, ay, { body: fresh ? '#2a2440' : '#8a8496' });
+    else it.box = say(p.npc ? `${p.name.toUpperCase()} · NEIGHBOR` : String(p.name || 'FRIEND').toUpperCase(), fresh ? p.msg : 'no update yet today', ax, ay, { body: fresh ? '#2a2440' : '#8a8496', color: p.npc ? '#8a6bb8' : '#e0457b' });
   }
   streetCanvas = toCanvas(P, R, sky.paper);
   state.skyKey = key;
@@ -858,10 +868,11 @@ const GIFT_KINDS = [
 function visit(it) {
   if (it.isMe) return state.mode === 'readonly' ? toast('This is you.') : openUpdate();
   const p = it.person, fresh = p.msgAt && Date.now() - p.msgAt < 20 * 3600000;
-  const canSend = DEMO() || !!ident;
+  const canSend = DEMO() || !!ident || (p.npc && !!state.me);
   const note = el('input', { id: 'f-note', maxlength: 60, placeholder: 'add a little note (optional)' });
   openDialog([
-    el('h2', {}, `${p.name} · ${cityOf(p).toLowerCase()} ${localTime(p.tz).toLowerCase()}`),
+    el('h2', {}, p.npc ? `${p.name} · your neighbor` : `${p.name} · ${cityOf(p).toLowerCase()} ${localTime(p.tz).toLowerCase()}`),
+    p.npc ? el('p', { class: 'muted' }, 'A sample neighbor who keeps the street cozy until your friends move in.') : null,
     el('p', {}, fresh ? p.msg : `${p.name} hasn't answered today yet.`),
     fresh ? el('p', { class: 'muted' }, `${ACTIVITIES[p.activity]?.label || 'Up to something'} · ${ago(p.msgAt)}`) : null,
     canSend ? el('div', { class: 'field' }, el('label', { for: 'f-note' }, `Send ${p.name} something`), note) : el('div', { class: 'row' }, el('button', { class: 'pbtn go', type: 'button', onclick: () => openJoin() }, 'Move in to send gifts')),
@@ -914,10 +925,11 @@ function openInvite() {
 async function sendGift(p, kind, note) {
   if (!p) return;
   const g = GIFT_KINDS.find((x) => x.kind === kind);
-  if (DEMO()) {
+  if (DEMO() || p.npc) {
     closeDialog();
     toast(`${g.label} on the way to ${p.name}!`);
-    setTimeout(() => toast(`${p.name}: "${DEMO_REPLIES[Math.floor(Math.random() * DEMO_REPLIES.length)]}"`, 5000), 4500);
+    const replies = p.npc ? NEIGHBOR_REPLIES : DEMO_REPLIES;
+    setTimeout(() => toast(`${p.name}: "${replies[Math.floor(Math.random() * replies.length)]}"`, 5000), 4500);
     return;
   }
   try {

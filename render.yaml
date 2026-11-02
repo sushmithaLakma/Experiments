@@ -1,0 +1,17 @@
+# Render Blueprint: deploys Friends Street (the friends-wall folder) as a free web service.
+# Data is kept in a free Upstash Redis database, because Render's free plan
+# wipes local files whenever the service restarts or goes to sleep.
+services:
+  - type: web
+    name: friends-street
+    runtime: node
+    plan: free
+    rootDir: friends-wall
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /
+    envVars:
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false

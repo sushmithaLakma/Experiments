@@ -46,9 +46,41 @@ if (fs.existsSync(DB_FILE)) {
   }
 }
 
+// Optional remote storage: free hosts often wipe local files on restart, so when
+// Upstash Redis credentials are set, the whole database is kept there as one JSON value.
+const REMOTE = process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
+  ? { url: process.env.UPSTASH_REDIS_REST_URL.replace(/\/$/, ''), token: process.env.UPSTASH_REDIS_REST_TOKEN, key: process.env.DB_KEY || 'friends-street-db' }
+  : null;
+async function remote(command) {
+  const res = await fetch(REMOTE.url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${REMOTE.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(command),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok || body.error) throw new Error(`storage ${res.status} ${body.error || ''}`.trim());
+  return body.result;
+}
+async function loadRemote() {
+  const raw = await remote(['GET', REMOTE.key]);
+  if (raw) db = JSON.parse(raw);
+  db.circles ||= {}; db.moments ||= {}; db.gifts ||= {};
+  console.log(`Loaded ${Object.keys(db.circles).length} streets from remote storage.`);
+}
+let remoteSaving = false, remoteAgain = false;
+async function saveRemote() {
+  if (remoteSaving) { remoteAgain = true; return; }
+  remoteSaving = true;
+  try { await remote(['SET', REMOTE.key, JSON.stringify(db)]); }
+  catch (err) { console.error('Could not save to remote storage:', err.message); }
+  remoteSaving = false;
+  if (remoteAgain) { remoteAgain = false; saveRemote(); }
+}
+
 let saveTimer = null;
 function save() {
   clearTimeout(saveTimer);
+  if (REMOTE) { saveTimer = setTimeout(saveRemote, 1000); return; }
   saveTimer = setTimeout(() => {
     try {
       const tmp = DB_FILE + '.tmp';
@@ -498,8 +530,14 @@ const server = http.createServer(async (req, res) => {
 });
 
 if (require.main === module) {
-  pruneExpired();
-  server.listen(PORT, () => console.log(`Friends Wall running at http://localhost:${PORT}`));
+  (async () => {
+    if (REMOTE) {
+      try { await loadRemote(); }
+      catch (err) { console.error('Could not load from remote storage, refusing to start with an empty street:', err.message); process.exit(1); }
+    }
+    pruneExpired();
+    server.listen(PORT, () => console.log(`Friends Street running at http://localhost:${PORT}${REMOTE ? ' (remote storage on)' : ''}`));
+  })();
 }
 
 module.exports = { server };

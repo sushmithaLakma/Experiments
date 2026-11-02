@@ -32,7 +32,13 @@ The pixel-art street from [docs/IDEAS.md](docs/IDEAS.md) is the main app at `/`.
 
 The original video wall is still at `/wall` (and `/c/CODE` links).
 
+A new street gets up to 4 sample **neighbors** (Rosa, Theo, Nana Jo and Kai, marked "NEIGHBOR") so it doesn't feel empty. They move out one by one as real friends move in, and are all gone once 6 friends live there.
+
 Limits of this trial version: anyone with a street's link can move in, there's no way to remove someone yet, and a person who switches browser or device moves in again as a new neighbor.
+
+## Put it online for free (Render + Upstash)
+
+[render.yaml](../render.yaml) at the repo root deploys this folder as a free Render web service. Render's free plan wipes local files on every restart or sleep, so the street is saved in a free Upstash Redis database instead. The server does this automatically when `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set, and it refuses to start if it can't reach that storage, rather than starting with an empty street. See the deploy steps in [DEPLOY.md](DEPLOY.md).
 
 ## Run it
 
