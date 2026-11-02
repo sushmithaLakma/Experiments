@@ -1,0 +1,13 @@
+{
+  "name": "friends-wall",
+  "version": "0.1.0",
+  "description": "All your friends in one frame: short video moments of what everyone is doing, on one shared wall.",
+  "main": "server.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test test/*.test.js"
+  },
+  "engines": { "node": ">=18" },
+  "license": "MIT"
+}

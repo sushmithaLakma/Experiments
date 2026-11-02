@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#14121a" />
+  <title>Friends Wall</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div id="app"></div>
+
+  <!-- Viewer: one friend's moments, with sound -->
+  <dialog id="viewer" class="sheet viewer">
+    <div class="viewer-top">
+      <div class="who"></div>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="viewer-stage">
+      <button class="nav prev" aria-label="Previous moment">‹</button>
+      <video playsinline controls></video>
+      <button class="nav next" aria-label="Next moment">›</button>
+    </div>
+    <p class="viewer-caption"></p>
+    <div class="viewer-meta"></div>
+    <div class="reactions"></div>
+  </dialog>
+
+  <!-- Recorder: share what you're doing -->
+  <dialog id="recorder" class="sheet recorder">
+    <div class="viewer-top">
+      <strong>What are you up to?</strong>
+      <button class="icon-btn" data-close aria-label="Close">✕</button>
+    </div>
+    <div class="rec-stage">
+      <video class="rec-live" playsinline muted autoplay></video>
+      <video class="rec-preview" playsinline controls loop hidden></video>
+      <div class="rec-timer" hidden>0s</div>
+      <p class="rec-message" hidden></p>
+    </div>
+    <div class="rec-controls">
+      <button class="rec-flip ghost" type="button" aria-label="Switch camera">↺ Flip</button>
+      <button class="rec-btn" type="button" aria-label="Start recording"><span></span></button>
+      <label class="ghost file-pick">
+        Upload
+        <input type="file" accept="video/*" capture="user" hidden />
+      </label>
+    </div>
+    <form class="rec-post" hidden>
+      <input name="caption" maxlength="140" placeholder="Add a caption — “making pasta”, “first run in ages”…" autocomplete="off" />
+      <div class="row">
+        <button type="button" class="ghost rec-retake">Retake</button>
+        <button type="submit" class="primary">Share with friends</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toasts" aria-live="polite"></div>
+  <script src="/app.js" type="module"></script>
+</body>
+</html>
