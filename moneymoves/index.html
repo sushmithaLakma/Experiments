@@ -4,18 +4,19 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600&display=swap">
 <style>
-  /* Layout: a stack of full-screen panels, each with its text centred.
+  /* Layout: a stack of full-screen panels, text centred. The hero sits on a
+     grainy cloud sky; every other panel is plain white.
      Single light theme on purpose: white page, ink text. */
   :root {
     --paper: #FFFFFF;
     --ink: #111317;
     --ink-soft: #4A4F57;
     --rule: #E4E6EA;
+    --sky-top: #6FA6E4;
     --font-display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
     --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
-    --step-hero: clamp(3.5rem, 12vw, 8.75rem);
-    --step-h2: clamp(2.5rem, 6.5vw, 4.5rem);
-    --step-h3: clamp(1.5rem, 3vw, 2rem);
+    --step-hero: clamp(3rem, 12vw, 8.75rem);
+    --step-h2: clamp(2.5rem, 6.5vw, 4.75rem);
     --step-lead: clamp(1.25rem, 2.4vw, 1.625rem);
     --step-body: 1.125rem;
     color-scheme: light;
@@ -41,9 +42,9 @@
     margin: 0;
   }
 
-  p { margin: 0 auto; max-width: 52ch; }
+  p { margin: 0 auto; max-width: 46ch; }
 
-  /* Header floats over the first panel so the hero still fills the screen. */
+  /* Header floats over the hero so the hero still fills the screen. */
   .site-header {
     position: absolute;
     inset: 0 0 auto;
@@ -51,7 +52,7 @@
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
     text-align: center;
-    z-index: 1;
+    z-index: 2;
   }
   .wordmark {
     font-family: var(--font-display);
@@ -62,6 +63,7 @@
 
   /* Every section is one full screen with its content centred. */
   .panel {
+    position: relative;
     min-height: 100vh;
     min-height: 100svh;
     display: flex;
@@ -70,76 +72,93 @@
     align-items: center;
     gap: 28px;
     text-align: center;
-    padding-block: 96px;
+    padding-block: 104px;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
   .panel + .panel { border-top: 1px solid var(--rule); }
-  .panel > * { max-width: 1040px; width: 100%; }
+  .panel > .content { max-width: 1040px; width: 100%; display: grid; gap: 28px; justify-items: center; }
 
-  /* Hero */
+  .panel h2 { font-size: var(--step-h2); font-weight: 800; }
+  .lead { font-size: var(--step-lead); line-height: 1.45; color: var(--ink-soft); }
+
+  /* ---------- Hero sky ---------- */
+  .hero { overflow: hidden; isolation: isolate; }
+  .sky, .grain {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+  /* Film grain: fine noise blended over the sky. */
+  .grain {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-size: 240px 240px;
+    opacity: 0.32;
+    mix-blend-mode: overlay;
+  }
   .hero h1 { font-size: var(--step-hero); font-weight: 800; }
-  .hero .lead { color: var(--ink-soft); line-height: 1.4; }
+  .hero .lead { color: var(--ink); opacity: 0.78; }
+
+  .button {
+    display: inline-block;
+    padding: 16px 28px;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.0625rem;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    transition: transform 0.15s ease;
+  }
+  .button:hover { transform: translateY(-2px); }
+  .button:focus-visible { outline: 3px solid var(--sky-top); outline-offset: 3px; }
 
   /* Pixelated letters: the filter samples the glyph on a small grid and
      grows each sample into a square block, giving stepped, pixel-art edges. */
   .px { display: inline-block; filter: url(#pixelate); }
 
-  .panel h2 { font-size: var(--step-h2); font-weight: 800; }
-  .lead { font-size: var(--step-lead); line-height: 1.45; }
-
-  .callout {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: var(--step-h3);
-    letter-spacing: -0.02em;
-  }
-
-  /* Skills list */
-  .sub-label {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    margin-top: 12px;
-  }
+  /* ---------- Skills ---------- */
   .skills {
     list-style: none;
-    margin: 0 auto;
+    margin: 12px 0 0;
     padding: 0;
+    width: 100%;
     display: grid;
-    gap: 22px;
-    max-width: 640px;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+    gap: 36px 28px;
   }
-  .skills li { display: grid; gap: 2px; }
+  .skills li { display: grid; gap: 6px; align-content: start; }
   .skills strong {
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.375rem;
     font-weight: 700;
     letter-spacing: -0.015em;
-    line-height: 1.25;
+    line-height: 1.2;
   }
-  .skills span { color: var(--ink-soft); }
+  .skills span { color: var(--ink-soft); font-size: 1rem; line-height: 1.5; }
 
-  /* Board tiles */
-  .board { display: grid; gap: 24px; margin-top: 12px; }
-  .board h3 { font-size: var(--step-h3); font-weight: 700; }
+  /* ---------- Board tiles ---------- */
   .tiles {
     list-style: none;
-    margin: 0 auto;
+    margin: 12px 0 0;
     padding: 0;
+    width: 100%;
+    max-width: 860px;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 24px;
-    max-width: 820px;
+    gap: 28px;
   }
-  .tiles li { display: grid; gap: 4px; align-content: start; }
+  .tiles li { display: grid; gap: 6px; align-content: start; }
   .tiles b {
     font-family: var(--font-display);
-    font-size: 1.75rem;
+    font-size: clamp(1.75rem, 3.5vw, 2.5rem);
     font-weight: 800;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
   }
   .tiles span { color: var(--ink-soft); font-size: 1rem; line-height: 1.45; }
 
@@ -155,10 +174,15 @@
 
   @media (max-width: 720px) {
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .px { filter: url(#pixelate-sm); } /* smaller blocks for smaller type */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .button { transition: none; }
   }
 </style>
 
-<!-- Pixelate filter: keep one 1px sample in every 4px cell, then dilate it into a 4px block. -->
+<!-- Pixelate filter: keep one 1px sample in every 4px cell, dilate it into a 4px block,
+     then snap each block to fully inked or empty so edges stay crisp. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
   <filter id="pixelate" x="0" y="0" width="100%" height="100%">
     <feFlood x="2" y="2" width="1" height="1" />
@@ -166,7 +190,17 @@
     <feTile result="grid" />
     <feComposite in="SourceGraphic" in2="grid" operator="in" />
     <feMorphology operator="dilate" radius="2" />
-    <!-- Snap each block to fully inked or empty, so edges stay crisp. -->
+    <feComponentTransfer>
+      <feFuncA type="discrete" tableValues="0 1" />
+    </feComponentTransfer>
+  </filter>
+  <!-- Same effect with 2px blocks, for phone-sized headlines. -->
+  <filter id="pixelate-sm" x="0" y="0" width="100%" height="100%">
+    <feFlood x="1" y="1" width="1" height="1" />
+    <feComposite width="2" height="2" />
+    <feTile result="grid" />
+    <feComposite in="SourceGraphic" in2="grid" operator="in" />
+    <feMorphology operator="dilate" radius="1" />
     <feComponentTransfer>
       <feFuncA type="discrete" tableValues="0 1" />
     </feComponentTransfer>
@@ -178,48 +212,96 @@
 </header>
 
 <main>
+  <!-- Hero on a grainy cloud sky -->
   <section class="panel hero" aria-labelledby="hero-title">
-    <h1 id="hero-title" data-pixelate>The headstart you never had!</h1>
-    <p class="lead">Build financial life through a game.</p>
+    <svg class="sky" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="sky-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#6FA6E4" />
+          <stop offset="0.55" stop-color="#A9CBF1" />
+          <stop offset="1" stop-color="#E9F2FC" />
+        </linearGradient>
+        <!-- Soft, wide clouds: low-frequency noise turned into white with alpha. -->
+        <filter id="clouds" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.0018 0.0045" numOctaves="5" seed="11" />
+          <feColorMatrix values="0 0 0 0 1
+                                 0 0 0 0 1
+                                 0 0 0 0 1
+                                 3.2 0 0 0 -1.45" />
+          <feGaussianBlur stdDeviation="2" />
+        </filter>
+        <!-- Lighter, wispier layer on top. -->
+        <filter id="wisps" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.004 0.011" numOctaves="4" seed="3" />
+          <feColorMatrix values="0 0 0 0 1
+                                 0 0 0 0 1
+                                 0 0 0 0 1
+                                 2.4 0 0 0 -1.15" />
+        </filter>
+      </defs>
+      <rect width="1600" height="1000" fill="url(#sky-gradient)" />
+      <rect width="1600" height="1000" filter="url(#clouds)" />
+      <rect width="1600" height="1000" filter="url(#wisps)" opacity="0.55" />
+    </svg>
+    <div class="grain" aria-hidden="true"></div>
+
+    <div class="content">
+      <h1 id="hero-title" data-pixelate>The headstart you never had!</h1>
+      <p class="lead">Build your kid's financial life through a game.</p>
+      <a class="button" href="#get">Get yours today</a>
+    </div>
   </section>
 
+  <!-- Why -->
   <section class="panel" aria-labelledby="why-title">
-    <h2 id="why-title">Why?</h2>
-    <p class="lead">Like every life skill, it's important that we teach money from a young age, so they don't have to learn it the hard way.</p>
+    <div class="content">
+      <h2 id="why-title">Money is a life skill. Teach it early.</h2>
+      <p class="lead">So they never have to learn it the hard way.</p>
+    </div>
   </section>
 
+  <!-- How -->
   <section class="panel" aria-labelledby="how-title">
-    <h2 id="how-title">How?</h2>
-    <p class="lead">Built to learn the most important things involved when dealing with money: savings, insurance, scams and more.</p>
-    <p class="callout">Fun, engaging and easy.</p>
-
-    <p class="sub-label">Skills they build</p>
-    <ul class="skills">
-      <li><strong>Make smart decisions</strong><span>Think. Plan. Choose wisely.</span></li>
-      <li><strong>Manage money wisely</strong><span>Budget. Save. Spend smart.</span></li>
-      <li><strong>Invest &amp; build wealth</strong><span>Understand investments the fun way.</span></li>
-      <li><strong>Avoid debt &amp; traps</strong><span>Recognize risks. Stay safe.</span></li>
-      <li><strong>Plan for the future</strong><span>Dream big. Prepare early.</span></li>
-    </ul>
+    <div class="content">
+      <h2 id="how-title">Real money lessons, played for fun.</h2>
+      <p class="lead">Saving, insurance, investing and scams. Everything that matters, made engaging and easy.</p>
+    </div>
   </section>
 
-  <section class="panel" aria-labelledby="inside-title">
-    <h2 id="inside-title">What's inside?</h2>
-    <p class="lead">Cards, money, characters and a board.</p>
+  <!-- Skills -->
+  <section class="panel" aria-labelledby="skills-title">
+    <div class="content">
+      <h2 id="skills-title">Five skills for life.</h2>
+      <ul class="skills">
+        <li><strong>Make smart decisions</strong><span>Think. Plan. Choose wisely.</span></li>
+        <li><strong>Manage money wisely</strong><span>Budget. Save. Spend smart.</span></li>
+        <li><strong>Invest &amp; build wealth</strong><span>Understand investments the fun way.</span></li>
+        <li><strong>Avoid debt &amp; traps</strong><span>Recognize risks. Stay safe.</span></li>
+        <li><strong>Plan for the future</strong><span>Dream big. Prepare early.</span></li>
+      </ul>
+    </div>
+  </section>
 
-    <div class="board">
-      <h3>Welcome to Financial City</h3>
+  <!-- What's inside -->
+  <section class="panel" aria-labelledby="inside-title">
+    <div class="content">
+      <h2 id="inside-title">Welcome to Financial City.</h2>
+      <p class="lead">Cards, money, characters and a board, all in one box.</p>
       <ul class="tiles">
-        <li><b>Earn</b></li>
-        <li><b>Spend</b></li>
+        <li><b>Earn</b><span>Get paid</span></li>
+        <li><b>Spend</b><span>Choose wisely</span></li>
         <li><b>Growth</b><span>SIP, gold, insurance, property</span></li>
         <li><b>Trap</b><span>Online scams</span></li>
       </ul>
     </div>
   </section>
 
-  <section class="panel" aria-labelledby="cta-title">
-    <h2 id="cta-title">Get yours today and teach your kids the most valuable thing in life.</h2>
+  <!-- Closing -->
+  <section class="panel" id="get" aria-labelledby="cta-title">
+    <div class="content">
+      <h2 id="cta-title">Teach them the most valuable thing in life.</h2>
+      <p class="lead">Get MoneyMoves today.</p>
+    </div>
   </section>
 </main>
 
