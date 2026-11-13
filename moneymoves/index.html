@@ -59,7 +59,7 @@
     padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
     z-index: 2;
   }
-  .brand { display: flex; align-items: flex-end; gap: 10px; }
+  .brand { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
   .wordmark {
     font-family: var(--font-display);
     font-weight: 800;
@@ -74,7 +74,6 @@
     color: var(--ink-soft);
     line-height: 1;
     letter-spacing: -0.01em;
-    padding-bottom: 1px; /* sit on the baseline of MOVES */
   }
 
   /* Every section is one full screen with its content centred. */
