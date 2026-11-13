@@ -4,7 +4,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600&display=swap">
 <style>
-  /* Layout: one centred reading column; each section opens with an oversized heading.
+  /* Layout: a stack of full-screen panels, each with its text centred.
      Single light theme on purpose: white page, ink text. */
   :root {
     --paper: #FFFFFF;
@@ -13,7 +13,7 @@
     --rule: #E4E6EA;
     --font-display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
     --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
-    --step-hero: clamp(3rem, 9vw, 6.5rem);
+    --step-hero: clamp(3.5rem, 12vw, 8.75rem);
     --step-h2: clamp(2.5rem, 6.5vw, 4.5rem);
     --step-h3: clamp(1.5rem, 3vw, 2rem);
     --step-lead: clamp(1.25rem, 2.4vw, 1.625rem);
@@ -33,13 +33,6 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  .wrap {
-    max-width: 1040px;
-    margin: 0 auto;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-  }
-
   h1, h2, h3 {
     font-family: var(--font-display);
     letter-spacing: -0.03em;
@@ -48,10 +41,18 @@
     margin: 0;
   }
 
-  p { margin: 0; max-width: 62ch; }
+  p { margin: 0 auto; max-width: 52ch; }
 
-  /* Header */
-  .site-header { padding-block: 28px; }
+  /* Header floats over the first panel so the hero still fills the screen. */
+  .site-header {
+    position: absolute;
+    inset: 0 0 auto;
+    padding-block: 28px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    text-align: center;
+    z-index: 1;
+  }
   .wordmark {
     font-family: var(--font-display);
     font-weight: 800;
@@ -59,23 +60,32 @@
     letter-spacing: -0.02em;
   }
 
-  /* Hero */
-  .hero {
-    padding-block: clamp(56px, 10vw, 120px) clamp(64px, 10vw, 128px);
-    display: grid;
+  /* Every section is one full screen with its content centred. */
+  .panel {
+    min-height: 100vh;
+    min-height: 100svh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
     gap: 28px;
+    text-align: center;
+    padding-block: 96px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
-  .hero h1 { font-size: var(--step-hero); font-weight: 800; }
-  .hero .lead { font-size: var(--step-lead); color: var(--ink-soft); line-height: 1.4; }
+  .panel + .panel { border-top: 1px solid var(--rule); }
+  .panel > * { max-width: 1040px; width: 100%; }
 
-  /* Sections */
-  section.block {
-    border-top: 1px solid var(--rule);
-    padding-block: clamp(56px, 8vw, 104px);
-    display: grid;
-    gap: 28px;
-  }
-  section.block h2 { font-size: var(--step-h2); font-weight: 800; }
+  /* Hero */
+  .hero h1 { font-size: var(--step-hero); font-weight: 800; }
+  .hero .lead { color: var(--ink-soft); line-height: 1.4; }
+
+  /* Pixelated letters: the filter samples the glyph on a small grid and
+     grows each sample into a square block, giving stepped, pixel-art edges. */
+  .px { display: inline-block; filter: url(#pixelate); }
+
+  .panel h2 { font-size: var(--step-h2); font-weight: 800; }
   .lead { font-size: var(--step-lead); line-height: 1.45; }
 
   .callout {
@@ -92,24 +102,20 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-soft);
+    margin-top: 12px;
   }
   .skills {
     list-style: none;
-    margin: 0;
+    margin: 0 auto;
     padding: 0;
     display: grid;
+    gap: 22px;
+    max-width: 640px;
   }
-  .skills li {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
-    gap: 8px 32px;
-    padding-block: 20px;
-    border-bottom: 1px solid var(--rule);
-  }
-  .skills li:first-child { border-top: 1px solid var(--rule); }
+  .skills li { display: grid; gap: 2px; }
   .skills strong {
     font-family: var(--font-display);
-    font-size: 1.375rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: -0.015em;
     line-height: 1.25;
@@ -117,108 +123,146 @@
   .skills span { color: var(--ink-soft); }
 
   /* Board tiles */
-  .board { display: grid; gap: 20px; }
+  .board { display: grid; gap: 24px; margin-top: 12px; }
   .board h3 { font-size: var(--step-h3); font-weight: 700; }
   .tiles {
     list-style: none;
-    margin: 0;
+    margin: 0 auto;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 24px;
+    max-width: 820px;
   }
   .tiles li { display: grid; gap: 4px; align-content: start; }
   .tiles b {
     font-family: var(--font-display);
-    font-size: 1.5rem;
+    font-size: 1.75rem;
     font-weight: 800;
     letter-spacing: -0.02em;
   }
   .tiles span { color: var(--ink-soft); font-size: 1rem; line-height: 1.45; }
 
-  /* Closing */
-  .closing h2 { font-size: var(--step-h2); }
-
   .site-footer {
     border-top: 1px solid var(--rule);
     padding-block: 28px 40px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
     color: var(--ink-soft);
     font-size: 0.9375rem;
+    text-align: center;
   }
 
   @media (max-width: 720px) {
-    .skills li { grid-template-columns: minmax(0, 1fr); }
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   }
 </style>
 
+<!-- Pixelate filter: keep one 1px sample in every 4px cell, then dilate it into a 4px block. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <filter id="pixelate" x="0" y="0" width="100%" height="100%">
+    <feFlood x="2" y="2" width="1" height="1" />
+    <feComposite width="4" height="4" />
+    <feTile result="grid" />
+    <feComposite in="SourceGraphic" in2="grid" operator="in" />
+    <feMorphology operator="dilate" radius="2" />
+    <!-- Snap each block to fully inked or empty, so edges stay crisp. -->
+    <feComponentTransfer>
+      <feFuncA type="discrete" tableValues="0 1" />
+    </feComponentTransfer>
+  </filter>
+</svg>
+
 <header class="site-header">
-  <div class="wrap">
-    <span class="wordmark">MoneyMoves</span>
-  </div>
+  <span class="wordmark">MoneyMoves</span>
 </header>
 
 <main>
-  <!-- Hero -->
-  <div class="wrap">
-    <section class="hero" aria-labelledby="hero-title">
-      <h1 id="hero-title">The headstart you never had!</h1>
-      <p class="lead">Build financial life through a game.</p>
-    </section>
-  </div>
+  <section class="panel hero" aria-labelledby="hero-title">
+    <h1 id="hero-title" data-pixelate>The headstart you never had!</h1>
+    <p class="lead">Build financial life through a game.</p>
+  </section>
 
-  <!-- Why -->
-  <div class="wrap">
-    <section class="block" aria-labelledby="why-title">
-      <h2 id="why-title">Why?</h2>
-      <p class="lead">Like every life skill, it's important that we teach money from a young age, so they don't have to learn it the hard way.</p>
-    </section>
-  </div>
+  <section class="panel" aria-labelledby="why-title">
+    <h2 id="why-title">Why?</h2>
+    <p class="lead">Like every life skill, it's important that we teach money from a young age, so they don't have to learn it the hard way.</p>
+  </section>
 
-  <!-- How -->
-  <div class="wrap">
-    <section class="block" aria-labelledby="how-title">
-      <h2 id="how-title">How?</h2>
-      <p class="lead">Built to learn the most important things involved when dealing with money: savings, insurance, scams and more.</p>
-      <p class="callout">Fun, engaging and easy.</p>
+  <section class="panel" aria-labelledby="how-title">
+    <h2 id="how-title">How?</h2>
+    <p class="lead">Built to learn the most important things involved when dealing with money: savings, insurance, scams and more.</p>
+    <p class="callout">Fun, engaging and easy.</p>
 
-      <p class="sub-label">Skills they build</p>
-      <ul class="skills">
-        <li><strong>Make smart decisions</strong><span>Think. Plan. Choose wisely.</span></li>
-        <li><strong>Manage money wisely</strong><span>Budget. Save. Spend smart.</span></li>
-        <li><strong>Invest &amp; build wealth</strong><span>Understand investments the fun way.</span></li>
-        <li><strong>Avoid debt &amp; traps</strong><span>Recognize risks. Stay safe.</span></li>
-        <li><strong>Plan for the future</strong><span>Dream big. Prepare early.</span></li>
+    <p class="sub-label">Skills they build</p>
+    <ul class="skills">
+      <li><strong>Make smart decisions</strong><span>Think. Plan. Choose wisely.</span></li>
+      <li><strong>Manage money wisely</strong><span>Budget. Save. Spend smart.</span></li>
+      <li><strong>Invest &amp; build wealth</strong><span>Understand investments the fun way.</span></li>
+      <li><strong>Avoid debt &amp; traps</strong><span>Recognize risks. Stay safe.</span></li>
+      <li><strong>Plan for the future</strong><span>Dream big. Prepare early.</span></li>
+    </ul>
+  </section>
+
+  <section class="panel" aria-labelledby="inside-title">
+    <h2 id="inside-title">What's inside?</h2>
+    <p class="lead">Cards, money, characters and a board.</p>
+
+    <div class="board">
+      <h3>Welcome to Financial City</h3>
+      <ul class="tiles">
+        <li><b>Earn</b></li>
+        <li><b>Spend</b></li>
+        <li><b>Growth</b><span>SIP, gold, insurance, property</span></li>
+        <li><b>Trap</b><span>Online scams</span></li>
       </ul>
-    </section>
-  </div>
+    </div>
+  </section>
 
-  <!-- What's inside -->
-  <div class="wrap">
-    <section class="block" aria-labelledby="inside-title">
-      <h2 id="inside-title">What's inside?</h2>
-      <p class="lead">Cards, money, characters and a board.</p>
-
-      <div class="board">
-        <h3>Welcome to Financial City</h3>
-        <ul class="tiles">
-          <li><b>Earn</b></li>
-          <li><b>Spend</b></li>
-          <li><b>Growth</b><span>SIP, gold, insurance, property</span></li>
-          <li><b>Trap</b><span>Online scams</span></li>
-        </ul>
-      </div>
-    </section>
-  </div>
-
-  <!-- Closing -->
-  <div class="wrap">
-    <section class="block closing" aria-labelledby="cta-title">
-      <h2 id="cta-title">Get yours today and teach your kids the most valuable thing in life.</h2>
-    </section>
-  </div>
+  <section class="panel" aria-labelledby="cta-title">
+    <h2 id="cta-title">Get yours today and teach your kids the most valuable thing in life.</h2>
+  </section>
 </main>
 
-<footer class="site-footer">
-  <div class="wrap">MoneyMoves</div>
-</footer>
+<footer class="site-footer">MoneyMoves</footer>
+
+<script>
+  // Pixelate a few random letters in any element marked data-pixelate.
+  // Screen readers get the whole heading via aria-label; the split letters are hidden from them.
+  (function () {
+    const SHARE = 0.25; // roughly one letter in four
+    document.querySelectorAll('[data-pixelate]').forEach((el) => {
+      const text = el.textContent;
+      const letters = [...text].map((ch, i) => ({ ch, i })).filter(({ ch }) => /\S/.test(ch));
+      const count = Math.max(2, Math.round(letters.length * SHARE));
+      const picked = new Set();
+      while (picked.size < Math.min(count, letters.length)) {
+        picked.add(letters[Math.floor(Math.random() * letters.length)].i);
+      }
+      const wrap = document.createElement('span');
+      wrap.setAttribute('aria-hidden', 'true');
+      // Keep words together so wrapping only happens between words.
+      text.split(/(\s+)/).reduce((offset, part) => {
+        if (/^\s+$/.test(part) || !part) {
+          wrap.append(part);
+        } else {
+          const word = document.createElement('span');
+          word.style.whiteSpace = 'nowrap';
+          [...part].forEach((ch, k) => {
+            if (picked.has(offset + k)) {
+              const s = document.createElement('span');
+              s.className = 'px';
+              s.textContent = ch;
+              word.append(s);
+            } else {
+              word.append(ch);
+            }
+          });
+          wrap.append(word);
+        }
+        return offset + part.length;
+      }, 0);
+      el.setAttribute('aria-label', text);
+      el.replaceChildren(wrap);
+    });
+  })();
+</script>
