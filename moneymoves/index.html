@@ -15,7 +15,7 @@
     --sky-top: #6FA6E4;
     --font-display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
     --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
-    --step-hero: clamp(3rem, 12vw, 8.75rem);
+    --step-hero: clamp(1.75rem, 6vw, 4.375rem);
     --step-h2: clamp(2.5rem, 6.5vw, 4.75rem);
     --step-lead: clamp(1.25rem, 2.4vw, 1.625rem);
     --step-body: 1.125rem;
@@ -49,16 +49,23 @@
     position: absolute;
     inset: 0 0 auto;
     padding-block: 28px;
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
-    text-align: center;
+    padding-left: max(24px, env(safe-area-inset-left, 0px));
+    padding-right: max(24px, env(safe-area-inset-right, 0px));
     z-index: 2;
   }
+  .brand { display: grid; gap: 2px; justify-items: start; }
   .wordmark {
     font-family: var(--font-display);
     font-weight: 800;
     font-size: 1.375rem;
     letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .byline {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--ink-soft);
+    line-height: 1.2;
   }
 
   /* Every section is one full screen with its content centred. */
@@ -120,7 +127,7 @@
 
   /* Pixelated letters: the filter samples the glyph on a small grid and
      grows each sample into a square block, giving stepped, pixel-art edges. */
-  .px { display: inline-block; filter: url(#pixelate); }
+  .px { display: inline-block; filter: url(#pixelate-sm); }
 
   /* ---------- Skills ---------- */
   .skills {
@@ -174,7 +181,7 @@
 
   @media (max-width: 720px) {
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .px { filter: url(#pixelate-sm); } /* smaller blocks for smaller type */
+    .px { filter: none; } /* too small to pixelate cleanly on phones */
   }
   @media (prefers-reduced-motion: reduce) {
     .button { transition: none; }
@@ -208,7 +215,10 @@
 </svg>
 
 <header class="site-header">
-  <span class="wordmark">MoneyMoves</span>
+  <div class="brand">
+    <span class="wordmark">MoneyMoves</span>
+    <span class="byline">by Dhanam</span>
+  </div>
 </header>
 
 <main>
