@@ -51,37 +51,34 @@
 
     // Coin grid: the face is a GRID_SIZE × GRID_SIZE pixel canvas.
     const GRID_SIZE = 32;
-    const COIN_THICKNESS = 4;      // body thickness in voxels
+    const COIN_THICKNESS = 2;      // body thickness in voxels
     const RIM_HEIGHT = 1;          // how far the rim stands above the face (voxels)
     const SYMBOL_HEIGHT = 1;       // how far the symbol stands above the face (voxels)
 
-    // Face design (₹). 1 = raised voxel, 0 = empty. Any width/height works:
+    // Face design (₹, 11×16). 1 = raised voxel, 0 = empty. Any width/height works:
     // it is centred on the coin automatically. Redraw freely.
     const SYMBOL = [
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [0,0,0,0,0,0,0,0,1,1,1,0,0,0],
-      [0,0,0,0,0,0,0,0,0,1,1,1,0,0],
-      [0,0,0,0,0,0,0,0,0,0,1,1,0,0],
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
-      [0,0,0,0,0,0,0,0,0,0,1,1,0,0],
-      [0,0,0,0,0,0,0,0,0,1,1,1,0,0],
-      [0,0,0,0,0,0,0,0,1,1,1,0,0,0],
-      [1,1,1,1,1,1,1,1,1,1,0,0,0,0],
-      [1,1,1,1,1,1,1,1,1,0,0,0,0,0],
-      [0,0,1,1,1,0,0,0,0,0,0,0,0,0],
-      [0,0,0,1,1,1,0,0,0,0,0,0,0,0],
-      [0,0,0,0,1,1,1,0,0,0,0,0,0,0],
-      [0,0,0,0,0,1,1,1,0,0,0,0,0,0],
-      [0,0,0,0,0,0,1,1,1,0,0,0,0,0],
-      [0,0,0,0,0,0,0,1,1,1,0,0,0,0],
-      [0,0,0,0,0,0,0,0,1,1,1,0,0,0],
-      [0,0,0,0,0,0,0,0,0,1,1,1,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,1,1,1,0],
+      [0,0,0,0,0,0,0,0,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,1,1,1],
+      [0,0,0,0,0,0,0,1,1,1,0],
+      [1,1,1,1,1,1,1,1,1,0,0],
+      [1,1,1,1,1,1,1,1,0,0,0],
+      [0,0,1,1,1,0,0,0,0,0,0],
+      [0,0,0,1,1,1,0,0,0,0,0],
+      [0,0,0,0,1,1,1,0,0,0,0],
+      [0,0,0,0,0,1,1,1,0,0,0],
+      [0,0,0,0,0,0,1,1,1,0,0],
+      [0,0,0,0,0,0,0,1,1,1,0],
     ];
 
     // Colours.
-    const COIN_COLOR = '#FFC400';  // one yellow gold for the whole coin
+    const COIN_COLOR = '#FFC400';    // yellow gold: body, face and rim
+    const SYMBOL_COLOR = '#D98400';  // brown-orange gold for the raised ₹
 
     // Metal look.
     const METALNESS = 0.55;
@@ -199,7 +196,7 @@
     /** Collect voxel centres for each colour. 1 voxel = 1 world unit. */
     function buildVoxels() {
       const { disc, rim, symbol } = buildMasks();
-      const face = [], deep = [];
+      const body = [], sym = [];
       const c = (GRID_SIZE - 1) / 2;
       const half = COIN_THICKNESS / 2;
 
@@ -214,29 +211,29 @@
           for (let z = 0; z < COIN_THICKNESS; z++) {
             const outer = z === 0 || z === COIN_THICKNESS - 1;
             if (!rim[y][x] && !outer) continue;
-            (rim[y][x] ? deep : face).push([px, py, z - half + 0.5]);
+            body.push([px, py, z - half + 0.5]);
           }
 
           // Raised rim on both faces.
           if (rim[y][x]) {
             for (let k = 0; k < RIM_HEIGHT; k++) {
-              deep.push([px, py,  half + 0.5 + k]);
-              deep.push([px, py, -half - 0.5 - k]);
+              body.push([px, py,  half + 0.5 + k]);
+              body.push([px, py, -half - 0.5 - k]);
             }
           }
 
           // Raised symbol, front face.
           if (symbol[y][x]) {
-            for (let k = 0; k < SYMBOL_HEIGHT; k++) deep.push([px, py, half + 0.5 + k]);
+            for (let k = 0; k < SYMBOL_HEIGHT; k++) sym.push([px, py, half + 0.5 + k]);
           }
           // Back face: mirror horizontally so the ₹ reads correctly from behind.
           const mx = GRID_SIZE - 1 - x;
           if (symbol[y][mx]) {
-            for (let k = 0; k < SYMBOL_HEIGHT; k++) deep.push([px, py, -half - 0.5 - k]);
+            for (let k = 0; k < SYMBOL_HEIGHT; k++) sym.push([px, py, -half - 0.5 - k]);
           }
         }
       }
-      return { face, deep };
+      return { body, sym };
     }
 
     /**
@@ -285,9 +282,10 @@
     // Voxel centres sit on half-units in z, so key on doubled coordinates.
     const key = (x, y, z) => `${Math.round(x * 2)},${Math.round(y * 2)},${Math.round(z * 2)}`;
 
-    const { face, deep } = buildVoxels();
-    const occupied = new Set([...face, ...deep].map(([x, y, z]) => key(x, y, z)));
-    coin.add(makeVoxelMesh([...face, ...deep], occupied, COIN_COLOR));
+    const { body, sym } = buildVoxels();
+    const occupied = new Set([...body, ...sym].map(([x, y, z]) => key(x, y, z)));
+    coin.add(makeVoxelMesh(body, occupied, COIN_COLOR));
+    coin.add(makeVoxelMesh(sym, occupied, SYMBOL_COLOR));
 
     /* =====================================================================
        SIZING
