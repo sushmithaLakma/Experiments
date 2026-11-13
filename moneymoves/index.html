@@ -97,17 +97,19 @@
   .lead { font-size: var(--step-lead); line-height: 1.45; color: var(--ink-soft); }
 
   /* ---------- Hero ---------- */
-  .hero h1 { font-size: var(--step-hero); font-weight: 700; line-height: 1.16; }
-  /* Yellow highlighter band behind each headline line: soft edges, light grain.
-     box-decoration-break gives every wrapped line its own band. */
-  .hero h1 > span {
-    background-color: var(--highlight);
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.45  0 0 0 0 0.35  0 0 0 0 0  0.5 0 0 0 -0.12'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
-    background-size: 160px 160px;
-    padding: 0 0.14em;
-    box-shadow: 0 0 0.14em 0.05em var(--highlight);
-    -webkit-box-decoration-break: clone;
-    box-decoration-break: clone;
+  .hero h1 { font-size: var(--step-hero); font-weight: 700; line-height: 1.04; }
+  /* Yellow cloud behind the headline: an irregular, blurred shape whose
+     edges dissolve into grain. Drawn by the SVG filter #yellow-cloud. */
+  .headline-wrap { position: relative; isolation: isolate; display: inline-block; }
+  .headline-cloud {
+    position: absolute;
+    left: -26%;
+    top: -70%;
+    width: 152%;
+    height: 240%;
+    z-index: -1;
+    pointer-events: none;
+    overflow: visible; /* let the dispersing edge spill past the box */
   }
   .hero .lead { color: var(--ink); opacity: 0.78; font-size: 16px; line-height: 1.5; letter-spacing: -0.015em; }
 
@@ -255,7 +257,32 @@
   <section class="panel hero" aria-labelledby="hero-title">
 
     <div class="content">
-      <h1 id="hero-title" data-pixelate>The headstart<br>you never had!</h1>
+      <div class="headline-wrap">
+        <svg class="headline-cloud" viewBox="0 0 1000 500" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <defs>
+            <filter id="yellow-cloud" x="-30%" y="-40%" width="160%" height="180%" color-interpolation-filters="sRGB">
+              <!-- Warp a plain shape with low-frequency noise so it has no recognisable outline. -->
+              <feTurbulence type="fractalNoise" baseFrequency="0.006 0.012" numOctaves="3" seed="7" result="warp" />
+              <feDisplacementMap in="SourceGraphic" in2="warp" scale="160" xChannelSelector="R" yChannelSelector="G" result="shape" />
+              <feGaussianBlur in="shape" stdDeviation="38" result="soft" />
+              <!-- Fine grain eats into the soft edge, so it disperses in speckles. -->
+              <feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="13" result="grain" />
+              <feColorMatrix in="grain" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0" result="grain-alpha" />
+              <feComposite in="soft" in2="grain-alpha" operator="arithmetic" k1="0" k2="1.7" k3="0.95" k4="-0.9" result="mask" />
+              <!-- Paint the mask yellow. -->
+              <feColorMatrix in="mask" values="0 0 0 0 0.961  0 0 0 0 0.875  0 0 0 0 0.447  0 0 0 1 0" result="cloud" />
+              <!-- A light speckle inside the yellow, like printed paper. -->
+              <feColorMatrix in="grain" values="0 0 0 0 0.55  0 0 0 0 0.45  0 0 0 0 0.1  0.35 0 0 0 -0.12" result="speckle" />
+              <feComposite in="speckle" in2="cloud" operator="in" result="speckle-in" />
+              <feMerge><feMergeNode in="cloud" /><feMergeNode in="speckle-in" /></feMerge>
+            </filter>
+          </defs>
+          <g filter="url(#yellow-cloud)">
+            <rect x="110" y="95" width="780" height="250" rx="125" fill="#000" />
+          </g>
+        </svg>
+        <h1 id="hero-title" data-pixelate>The headstart<br>you never had!</h1>
+      </div>
       <p class="lead">Build your kid's financial life through a game.</p>
       <a class="button" href="#get">Get yours today</a>
     </div>
