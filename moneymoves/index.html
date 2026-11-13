@@ -132,21 +132,21 @@
     pointer-events: none;
   }
 
-  /* ---------- Hero: game cards fanned in from both sides ----------
-     Recreations of the real Money Moves cards. Growth cards fan from the
-     left edge, Trap cards from the right. Each card turns around a pivot
-     below its bottom edge, like a hand of cards. */
+  /* ---------- Hero: game cards fanned up from the bottom ----------
+     Recreations of the real Money Moves cards: two Growth, two Trap.
+     Each card turns around a pivot below its bottom edge, like a hand
+     of cards rising from the bottom of the hero. */
   .hero > .content { position: relative; z-index: 2; }
   .fan {
     position: absolute;
-    bottom: 12%;
+    left: 50%;
+    bottom: -96px;
+    translate: -50% 0;
     width: 210px;
     height: 280px;
     z-index: 1;
     pointer-events: none;
   }
-  .fan-left  { left: -40px; }
-  .fan-right { right: -40px; }
   .fan .kcard {
     position: absolute;
     inset: 0;
@@ -225,15 +225,8 @@
   }
   .prop-coin canvas { display: block; }
 
-  @media (max-width: 1000px) {
-    .fan { scale: 0.75; }
-    .fan-left  { left: -70px; transform-origin: left bottom; }
-    .fan-right { right: -70px; transform-origin: right bottom; }
-  }
   @media (max-width: 720px) {
-    .fan { scale: 0.52; bottom: 3%; }
-    .fan-left  { left: -60px; }
-    .fan-right { right: -60px; }
+    .fan { scale: 0.66; transform-origin: 50% 100%; bottom: -70px; }
     .prop-coin { width: 140px; height: 140px; top: 13%; }
   }
   @media (prefers-reduced-motion: reduce) {
@@ -444,39 +437,27 @@
       <rect width="100%" height="100%" fill="url(#fade-gradient)" filter="url(#sky-dissolve)" />
     </svg>
 
-    <!-- Real game cards, fanned in from both sides (decorative) -->
-    <div class="fan fan-left" aria-hidden="true">
-        <div class="kcard growth" style="--a:-4deg; --delay:0.15s">
-          <div class="kc-head"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9.5" fill="#fff"/><path d="M5 13.5l3.2-3.2 2.4 2.2L15 8" fill="none" stroke="#9B4DD6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7.6h3.2v3.2" fill="none" stroke="#9B4DD6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>GROWTH</div>
-          <div class="kc-body"><span class="kc-title">INSURANCE</span><span class="kc-text">You took a general insurance.</span><hr class="kc-rule"><span class="kc-pay">PAY &#8377;3,000/-</span><span class="kc-earn">Skip a spend/trap.</span><svg class="kc-art" viewBox="0 0 52 52" aria-hidden="true"><rect x="5" y="9" width="26" height="34" rx="3" fill="#FFFFFF" stroke="#111317" stroke-width="1.5"/><path d="M10 17h16M10 23h16M10 29h10" stroke="#B9C3CF" stroke-width="2" stroke-linecap="round"/><path d="M36 18l10 4v8c0 7-5 11-10 13-5-2-10-6-10-13v-8z" fill="#4C8DE8" stroke="#111317" stroke-width="1.5" stroke-linejoin="round"/><path d="M31.5 30l3.2 3.2 6-6.4" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-          <div class="kc-tip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.2v.6h4v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 8 1.5z" fill="#F5C518" stroke="#111317" stroke-width="1"/><path d="M6.2 13.4h3.6M6.8 15h2.4" stroke="#111317" stroke-width="1.1" stroke-linecap="round"/></svg><span>Insurance supports you during difficult times.</span></div>
-        </div>
-        <div class="kcard growth" style="--a:11deg; --delay:0.08s">
+    <!-- Four real game cards, fanned up from the bottom edge (decorative) -->
+    <div class="fan" aria-hidden="true">
+        <div class="kcard growth" style="--a:-27deg; --delay:0.18s">
           <div class="kc-head"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9.5" fill="#fff"/><path d="M5 13.5l3.2-3.2 2.4 2.2L15 8" fill="none" stroke="#9B4DD6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7.6h3.2v3.2" fill="none" stroke="#9B4DD6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>GROWTH</div>
           <div class="kc-body"><span class="kc-title">SIP</span><span class="kc-text">You invest one-time.</span><hr class="kc-rule"><span class="kc-pay">PAY &#8377;3000 once/-</span><span class="kc-earn">Earn &#8377;300/- every turn. Max 3 SIPs.</span><svg class="kc-art" viewBox="0 0 52 52" aria-hidden="true"><rect x="6" y="38" width="12" height="8" rx="1" fill="#E7A93B" stroke="#111317" stroke-width="1.3"/><rect x="20" y="32" width="12" height="14" rx="1" fill="#E7A93B" stroke="#111317" stroke-width="1.3"/><rect x="34" y="24" width="12" height="22" rx="1" fill="#E7A93B" stroke="#111317" stroke-width="1.3"/><path d="M40 24c0-6 0-10 0-14" stroke="#3E8E4C" stroke-width="2"/><path d="M40 14c-5-1-7-5-6-8 4 0 7 3 6 8zM40 12c4-2 8-1 9 2-3 2-7 1-9-2z" fill="#5DB36A" stroke="#111317" stroke-width="1"/><path d="M6 30l10-7 8 4 10-9" fill="none" stroke="#3E8E4C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
           <div class="kc-tip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.2v.6h4v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 8 1.5z" fill="#F5C518" stroke="#111317" stroke-width="1"/><path d="M6.2 13.4h3.6M6.8 15h2.4" stroke="#111317" stroke-width="1.1" stroke-linecap="round"/></svg><span>SIPs help you invest little by little.</span></div>
         </div>
-        <div class="kcard growth" style="--a:26deg; --delay:0s">
+        <div class="kcard growth" style="--a:-9deg; --delay:0.06s">
           <div class="kc-head"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="9.5" fill="#fff"/><path d="M5 13.5l3.2-3.2 2.4 2.2L15 8" fill="none" stroke="#9B4DD6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 7.6h3.2v3.2" fill="none" stroke="#9B4DD6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>GROWTH</div>
           <div class="kc-body"><span class="kc-title">PROPERTY</span><span class="kc-text">You purchase a property.</span><hr class="kc-rule"><span class="kc-pay">PAY &#8377;10,000/-</span><span class="kc-earn">Earn &#8377;1,500/- every turn.</span><svg class="kc-art" viewBox="0 0 52 52" aria-hidden="true"><rect x="12" y="10" width="26" height="36" rx="2" fill="#7FB3E8" stroke="#111317" stroke-width="1.5"/><g fill="#DCEBFA"><rect x="16" y="15" width="5" height="5"/><rect x="23" y="15" width="5" height="5"/><rect x="30" y="15" width="5" height="5"/><rect x="16" y="23" width="5" height="5"/><rect x="23" y="23" width="5" height="5"/><rect x="30" y="23" width="5" height="5"/><rect x="16" y="31" width="5" height="5"/><rect x="23" y="31" width="5" height="5"/><rect x="30" y="31" width="5" height="5"/></g><rect x="22" y="38" width="7" height="8" fill="#5B6B7E"/><circle cx="8" cy="40" r="5" fill="#5DB36A"/><circle cx="44" cy="41" r="4.5" fill="#5DB36A"/><path d="M2 46h48" stroke="#111317" stroke-width="1.5"/></svg></div>
           <div class="kc-tip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.2v.6h4v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 8 1.5z" fill="#F5C518" stroke="#111317" stroke-width="1"/><path d="M6.2 13.4h3.6M6.8 15h2.4" stroke="#111317" stroke-width="1.1" stroke-linecap="round"/></svg><span>Rent can become a passive income source.</span></div>
         </div>
-    </div>
-    <div class="fan fan-right" aria-hidden="true">
-        <div class="kcard trap" style="--a:4deg; --delay:0.15s">
-          <div class="kc-head"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.2L18.6 17H1.4z" fill="#fff" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 7.5v4.6" stroke="#E5413A" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14.4" r="1.1" fill="#E5413A"/></svg>TRAP<span class="kc-num">12</span></div>
-          <div class="kc-body"><span class="kc-title">FREE TRIAL TRAP</span><span class="kc-text">You signed up for a free trial &amp; forgot to cancel it later.</span><hr class="kc-rule"><span class="kc-pay">PAY &#8377;4000/-</span><svg class="kc-art" viewBox="0 0 52 52" aria-hidden="true"><rect x="6" y="12" width="32" height="30" rx="3" fill="#FFFFFF" stroke="#111317" stroke-width="1.5"/><rect x="6" y="12" width="32" height="8" rx="3" fill="#E5413A" stroke="#111317" stroke-width="1.5"/><path d="M13 9v6M31 9v6" stroke="#111317" stroke-width="1.8" stroke-linecap="round"/><text x="22" y="35" text-anchor="middle" font-size="12" font-weight="800" fill="#111317" font-family="Inter Tight, Arial, sans-serif">30</text><circle cx="40" cy="38" r="8" fill="#F5C518" stroke="#111317" stroke-width="1.5"/><path d="M40 34v4.5l3 2" stroke="#111317" stroke-width="1.5" stroke-linecap="round"/></svg></div>
-          <div class="kc-tip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.2v.6h4v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 8 1.5z" fill="#F5C518" stroke="#111317" stroke-width="1"/><path d="M6.2 13.4h3.6M6.8 15h2.4" stroke="#111317" stroke-width="1.1" stroke-linecap="round"/></svg><span>Free trials can turn into paid subscriptions.</span></div>
-        </div>
-        <div class="kcard trap" style="--a:-11deg; --delay:0.08s">
-          <div class="kc-head"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.2L18.6 17H1.4z" fill="#fff" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 7.5v4.6" stroke="#E5413A" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14.4" r="1.1" fill="#E5413A"/></svg>TRAP<span class="kc-num">06</span></div>
-          <div class="kc-body"><span class="kc-title">FOOD DELIVERY HABIT</span><span class="kc-text">You kept ordering food daily for 30 days.</span><hr class="kc-rule"><span class="kc-pay">PAY &#8377;6000/-</span><svg class="kc-art" viewBox="0 0 52 52" aria-hidden="true"><path d="M12 18h28l-3 26H15z" fill="#F2A33A" stroke="#111317" stroke-width="1.5" stroke-linejoin="round"/><path d="M19 18c0-6 3-9 7-9s7 3 7 9" fill="none" stroke="#111317" stroke-width="1.5"/><circle cx="26" cy="31" r="6" fill="#FFFFFF" stroke="#111317" stroke-width="1.3"/><path d="M23.5 31h5M26 28.5v5" stroke="#E5413A" stroke-width="1.6" stroke-linecap="round"/></svg></div>
-          <div class="kc-tip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.2v.6h4v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 8 1.5z" fill="#F5C518" stroke="#111317" stroke-width="1"/><path d="M6.2 13.4h3.6M6.8 15h2.4" stroke="#111317" stroke-width="1.1" stroke-linecap="round"/></svg><span>Small leakages can sink the ship.</span></div>
-        </div>
-        <div class="kcard trap" style="--a:-26deg; --delay:0s">
+        <div class="kcard trap" style="--a:9deg; --delay:0.06s">
           <div class="kc-head"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.2L18.6 17H1.4z" fill="#fff" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 7.5v4.6" stroke="#E5413A" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14.4" r="1.1" fill="#E5413A"/></svg>TRAP<span class="kc-num">02</span></div>
           <div class="kc-body"><span class="kc-title">EMI TRAP</span><span class="kc-text">Buy Now Pay Later: you bought something expensive using a credit card.</span><hr class="kc-rule"><span class="kc-pay">PAY &#8377;8000/-</span><svg class="kc-art" viewBox="0 0 52 52" aria-hidden="true"><rect x="4" y="14" width="38" height="25" rx="4" fill="#2B3B66" stroke="#111317" stroke-width="1.5"/><rect x="9" y="20" width="8" height="6" rx="1" fill="#E7C15A"/><path d="M9 32h22" stroke="#9AA8C8" stroke-width="2" stroke-linecap="round"/><circle cx="41" cy="34" r="9" fill="#F5C518" stroke="#111317" stroke-width="1.5"/><text x="41" y="38" text-anchor="middle" font-size="11" font-weight="800" fill="#111317" font-family="Inter Tight, Arial, sans-serif">%</text></svg></div>
           <div class="kc-tip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.2v.6h4v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 8 1.5z" fill="#F5C518" stroke="#111317" stroke-width="1"/><path d="M6.2 13.4h3.6M6.8 15h2.4" stroke="#111317" stroke-width="1.1" stroke-linecap="round"/></svg><span>Small monthly payments can become big pressure later.</span></div>
+        </div>
+        <div class="kcard trap" style="--a:27deg; --delay:0.18s">
+          <div class="kc-head"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.2L18.6 17H1.4z" fill="#fff" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M10 7.5v4.6" stroke="#E5413A" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14.4" r="1.1" fill="#E5413A"/></svg>TRAP<span class="kc-num">06</span></div>
+          <div class="kc-body"><span class="kc-title">FOOD DELIVERY HABIT</span><span class="kc-text">You kept ordering food daily for 30 days.</span><hr class="kc-rule"><span class="kc-pay">PAY &#8377;6000/-</span><svg class="kc-art" viewBox="0 0 52 52" aria-hidden="true"><path d="M12 18h28l-3 26H15z" fill="#F2A33A" stroke="#111317" stroke-width="1.5" stroke-linejoin="round"/><path d="M19 18c0-6 3-9 7-9s7 3 7 9" fill="none" stroke="#111317" stroke-width="1.5"/><circle cx="26" cy="31" r="6" fill="#FFFFFF" stroke="#111317" stroke-width="1.3"/><path d="M23.5 31h5M26 28.5v5" stroke="#E5413A" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+          <div class="kc-tip"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.5a4.5 4.5 0 0 0-2.6 8.2c.4.3.6.7.6 1.2v.6h4v-.6c0-.5.2-.9.6-1.2A4.5 4.5 0 0 0 8 1.5z" fill="#F5C518" stroke="#111317" stroke-width="1"/><path d="M6.2 13.4h3.6M6.8 15h2.4" stroke="#111317" stroke-width="1.1" stroke-linecap="round"/></svg><span>Small leakages can sink the ship.</span></div>
         </div>
     </div>
     <div class="prop-coin" id="hero-coin" aria-hidden="true"></div>
