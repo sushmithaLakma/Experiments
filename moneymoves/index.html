@@ -63,8 +63,13 @@
     padding-block: 28px;
     padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
     padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
-    z-index: 2;
+    z-index: 3;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
   }
+  .site-header .button { padding: 12px 20px; font-size: 0.9375rem; }
   .brand { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
   .wordmark {
     font-family: var(--font-display);
@@ -373,6 +378,7 @@
     <span class="wordmark" aria-label="MoneyMoves">Money<br>Moves</span>
     <span class="byline">by Dhanam</span>
   </div>
+  <a class="button" href="#get">Get yours today</a>
 </header>
 
 <main>
@@ -464,7 +470,6 @@
     <div class="content">
       <h1 id="hero-title" data-pixelate>The headstart<br>you never had!</h1>
       <p class="lead">Build your kid's financial life through a game.</p>
-      <a class="button" href="#get">Get yours today</a>
     </div>
   </section>
 
