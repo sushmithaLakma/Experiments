@@ -4,8 +4,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap">
 <style>
-  /* Layout: a stack of full-screen panels, text centred. The headline sits on
-     yellow highlighter bands; every panel is plain white.
+  /* Layout: a stack of full-screen panels, text centred. The hero sits on a
+     grainy cloud sky that dissolves into white; every other panel is plain white.
      Single light theme on purpose: white page, ink text. */
   :root {
     --paper: #FFFFFF;
@@ -96,7 +96,34 @@
   .panel h2 { font-size: var(--step-h2); font-weight: 800; }
   .lead { font-size: var(--step-lead); line-height: 1.45; color: var(--ink-soft); }
 
-  /* ---------- Hero ---------- */
+  /* ---------- Hero sky ---------- */
+  .hero { overflow: hidden; isolation: isolate; }
+  .sky, .grain {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    pointer-events: none;
+  }
+  /* Film grain: fine noise blended over the sky. */
+  .grain {
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='240'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+    background-size: 240px 240px;
+    opacity: 0.18;
+    mix-blend-mode: overlay;
+  }
+  /* Bottom of the hero dissolves into the white page through grain. */
+  .sky-fade {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 45%;
+    z-index: -1;
+    pointer-events: none;
+  }
   .hero h1 { font-size: var(--step-hero); font-weight: 700; line-height: 1.04; }
   /* Yellow cloud behind the headline: an irregular, blurred shape whose
      edges dissolve into grain. Drawn by the SVG filter #yellow-cloud. */
@@ -253,8 +280,66 @@
 </header>
 
 <main>
-  <!-- Hero: headline on yellow highlighter bands -->
+  <!-- Hero: cloud sky that dissolves into the white page -->
   <section class="panel hero" aria-labelledby="hero-title">
+    <svg class="sky" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+      <defs>
+        <!-- Hazy pastel sky: periwinkle blue with very little top-to-bottom change. -->
+        <linearGradient id="sky-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#86B2EA" />
+          <stop offset="0.5" stop-color="#97BDEC" />
+          <stop offset="1" stop-color="#A9C8EE" />
+        </linearGradient>
+        <!-- Lavender haze: faint violet patches, as in the reference. -->
+        <filter id="haze" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.0012 0.0022" numOctaves="3" seed="21" />
+          <feColorMatrix values="0 0 0 0 0.84
+                                 0 0 0 0 0.79
+                                 0 0 0 0 0.90
+                                 1.8 0 0 0 -0.75" />
+          <feGaussianBlur stdDeviation="18" />
+        </filter>
+        <!-- Big, soft clouds covering about half the sky. -->
+        <filter id="clouds" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.0016 0.0034" numOctaves="5" seed="11" />
+          <feColorMatrix values="0 0 0 0 0.95
+                                 0 0 0 0 0.955
+                                 0 0 0 0 0.97
+                                 4.2 0 0 0 -1.95" />
+          <feGaussianBlur stdDeviation="1.5" />
+        </filter>
+        <!-- Brighter cloud cores so the clouds have some depth. -->
+        <filter id="cores" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.0016 0.0034" numOctaves="5" seed="11" />
+          <feColorMatrix values="0 0 0 0 0.98
+                                 0 0 0 0 0.985
+                                 0 0 0 0 0.99
+                                 4.4 0 0 0 -2.35" />
+          <feGaussianBlur stdDeviation="3" />
+        </filter>
+      </defs>
+      <rect width="1600" height="1000" fill="url(#sky-gradient)" />
+      <rect width="1600" height="1000" filter="url(#haze)" opacity="0.35" />
+      <rect width="1600" height="1000" filter="url(#clouds)" />
+      <rect width="1600" height="1000" filter="url(#cores)" opacity="0.8" />
+    </svg>
+    <div class="grain" aria-hidden="true"></div>
+    <!-- White fade with a grainy, dispersing edge. No viewBox, so the grain stays square at any width. -->
+    <svg class="sky-fade" aria-hidden="true" focusable="false">
+      <defs>
+        <linearGradient id="fade-gradient" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#fff" stop-opacity="0" />
+          <stop offset="0.85" stop-color="#fff" stop-opacity="1" />
+        </linearGradient>
+        <filter id="sky-dissolve" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+          <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" seed="5" result="grain" />
+          <feColorMatrix in="grain" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1 0 0 0 0" result="grain-alpha" />
+          <feComposite in="SourceGraphic" in2="grain-alpha" operator="arithmetic" k1="0" k2="1.8" k3="0.95" k4="-0.9" result="mask" />
+          <feColorMatrix in="mask" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 1 0" />
+        </filter>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#fade-gradient)" filter="url(#sky-dissolve)" />
+    </svg>
 
     <div class="content">
       <div class="headline-wrap">
