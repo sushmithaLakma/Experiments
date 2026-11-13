@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Voxel Gold Coin</title>
+  <style>
+    html, body {
+      margin: 0;
+      height: 100%;
+      background: #F7F5F0;
+    }
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    /* 600×600 stage that shrinks to fit narrow screens. */
+    #coin-stage {
+      width: min(600px, 92vw, 92vh);
+      aspect-ratio: 1 / 1;
+      position: relative;
+      cursor: grab;
+      touch-action: none; /* let pointer drag work on touch screens */
+    }
+    #coin-stage.dragging { cursor: grabbing; }
+    #coin-stage canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+
+  <!-- Map the bare "three" and "three/addons/" specifiers to unpkg. -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@latest/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@latest/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="coin-stage" role="img" aria-label="Rotating gold coin with a rupee symbol"></div>
+
+  <script type="module">
+    import * as THREE from 'three';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+
+    /* =====================================================================
+       TWEAKABLE CONSTANTS
+       ===================================================================== */
+
+    // Coin grid: the face is a GRID_SIZE × GRID_SIZE pixel canvas.
+    const GRID_SIZE = 32;
+    const COIN_THICKNESS = 4;      // body thickness in voxels
+    const RIM_HEIGHT = 1;          // how far the rim stands above the face (voxels)
+    const SYMBOL_HEIGHT = 1;       // how far the symbol stands above the face (voxels)
+
+    // Face design (₹). 1 = raised voxel, 0 = empty. Any width/height works:
+    // it is centred on the coin automatically. Redraw freely.
+    const SYMBOL = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,1,1,1,0,0,0],
+      [0,0,0,0,0,0,0,0,0,1,1,1,0,0],
+      [0,0,0,0,0,0,0,0,0,0,1,1,0,0],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,0,0,1,1,0,0],
+      [0,0,0,0,0,0,0,0,0,1,1,1,0,0],
+      [0,0,0,0,0,0,0,0,1,1,1,0,0,0],
+      [1,1,1,1,1,1,1,1,1,1,0,0,0,0],
+      [1,1,1,1,1,1,1,1,1,0,0,0,0,0],
+      [0,0,1,1,1,0,0,0,0,0,0,0,0,0],
+      [0,0,0,1,1,1,0,0,0,0,0,0,0,0],
+      [0,0,0,0,1,1,1,0,0,0,0,0,0,0],
+      [0,0,0,0,0,1,1,1,0,0,0,0,0,0],
+      [0,0,0,0,0,0,1,1,1,0,0,0,0,0],
+      [0,0,0,0,0,0,0,1,1,1,0,0,0,0],
+      [0,0,0,0,0,0,0,0,1,1,1,0,0,0],
+      [0,0,0,0,0,0,0,0,0,1,1,1,0,0],
+    ];
+
+    // Colours.
+    const FACE_COLOR = '#F2C14E';  // flat face / body
+    const DEEP_COLOR = '#D9A332';  // rim + raised symbol
+
+    // Metal look.
+    const METALNESS = 0.85;
+    const ROUGHNESS = 0.3;
+    const ENV_INTENSITY = 0.65;    // strength of RoomEnvironment reflections
+    const VOXEL_BEVEL = 0.06;      // rounded voxel edge radius (0 = sharp cubes)
+
+    // Motion.
+    const SECONDS_PER_TURN = 6;                       // auto-rotation speed
+    const BASE_TILT_X = THREE.MathUtils.degToRad(10); // constant forward tilt
+    const FLOAT_AMPLITUDE = 0.8;                      // world units (1 voxel = 1 unit)
+    const FLOAT_PERIOD = 3.2;                         // seconds per bob
+    const HOVER_TILT = THREE.MathUtils.degToRad(14);  // max tilt toward cursor
+    const DRAG_SENSITIVITY = 0.01;                    // radians per pixel dragged
+    const EASE = 3.0;                                 // higher = faster ease back
+
+    const MAX_PIXEL_RATIO = 2;
+
+    /* =====================================================================
+       RENDERER, SCENE, CAMERA
+       ===================================================================== */
+
+    const stage = document.getElementById('coin-stage');
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);                 // transparent canvas
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    stage.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+
+    // Reflections: a neutral studio room baked into a prefiltered env map.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = ENV_INTENSITY;
+    pmrem.dispose();
+
+    const camera = new THREE.PerspectiveCamera(30, 1, 1, 400);
+    camera.position.set(0, 0, 82);
+    camera.lookAt(0, 0, 0);
+
+    /* =====================================================================
+       LIGHTS
+       ===================================================================== */
+
+    // Low ambient so shadowed voxel steps stay readable but dark.
+    scene.add(new THREE.AmbientLight(0xffffff, 0.08));
+
+    // Warm key light from the top-left; casts the voxel self-shadows.
+    const keyLight = new THREE.DirectionalLight(0xffe2b0, 3.6);
+    keyLight.position.set(-45, 42, 32);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    const sc = keyLight.shadow.camera;
+    sc.left = -24; sc.right = 24; sc.top = 24; sc.bottom = -24;
+    sc.near = 20; sc.far = 160;
+    keyLight.shadow.bias = -0.0004;
+    keyLight.shadow.normalBias = 0.03;
+    keyLight.shadow.radius = 2;
+    scene.add(keyLight);
+
+    // Soft cool fill from the right.
+    const fillLight = new THREE.DirectionalLight(0xbcd2ff, 0.7);
+    fillLight.position.set(50, 5, 30);
+    scene.add(fillLight);
+
+    /* =====================================================================
+       BUILD THE VOXEL COIN
+       ===================================================================== */
+
+    // Scene graph: floatGroup (bob) → tiltGroup (X/Z tilt) → coin (Y spin)
+    const floatGroup = new THREE.Group();
+    const tiltGroup = new THREE.Group();
+    const coin = new THREE.Group();
+    floatGroup.add(tiltGroup);
+    tiltGroup.add(coin);
+    scene.add(floatGroup);
+
+    /** Build per-cell masks for the coin disc, its rim ring and the symbol. */
+    function buildMasks() {
+      const c = (GRID_SIZE - 1) / 2;           // grid centre
+      const r = GRID_SIZE / 2;                 // disc radius
+      const inside = (x, y) =>
+        x >= 0 && y >= 0 && x < GRID_SIZE && y < GRID_SIZE &&
+        (x - c) ** 2 + (y - c) ** 2 <= r * r;
+
+      const disc = [], rim = [], symbol = [];
+      for (let y = 0; y < GRID_SIZE; y++) {
+        disc.push([]); rim.push([]); symbol.push([]);
+        for (let x = 0; x < GRID_SIZE; x++) {
+          const isIn = inside(x, y);
+          disc[y][x] = isIn;
+          // Rim = disc cells that touch the outside (8-neighbourhood).
+          let edge = false;
+          if (isIn) {
+            for (let dy = -1; dy <= 1 && !edge; dy++)
+              for (let dx = -1; dx <= 1; dx++)
+                if (!inside(x + dx, y + dy)) { edge = true; break; }
+          }
+          rim[y][x] = edge;
+          symbol[y][x] = false;
+        }
+      }
+
+      // Stamp the SYMBOL array into the centre of the grid.
+      const h = SYMBOL.length, w = SYMBOL[0].length;
+      const ox = Math.floor((GRID_SIZE - w) / 2);
+      const oy = Math.floor((GRID_SIZE - h) / 2);
+      for (let sy = 0; sy < h; sy++)
+        for (let sx = 0; sx < w; sx++)
+          if (SYMBOL[sy][sx]) {
+            const x = ox + sx, y = oy + sy;
+            if (disc[y]?.[x] && !rim[y][x]) symbol[y][x] = true;
+          }
+      return { disc, rim, symbol };
+    }
+
+    /** Collect voxel centres for each colour. 1 voxel = 1 world unit. */
+    function buildVoxels() {
+      const { disc, rim, symbol } = buildMasks();
+      const face = [], deep = [];
+      const c = (GRID_SIZE - 1) / 2;
+      const half = COIN_THICKNESS / 2;
+
+      for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+          if (!disc[y][x]) continue;
+          const px = x - c;
+          const py = c - y;                     // flip so row 0 is the top
+
+          // Body layers. Interior cells only need their outermost layers
+          // (inner ones are hidden), which keeps the instance count down.
+          for (let z = 0; z < COIN_THICKNESS; z++) {
+            const outer = z === 0 || z === COIN_THICKNESS - 1;
+            if (!rim[y][x] && !outer) continue;
+            (rim[y][x] ? deep : face).push([px, py, z - half + 0.5]);
+          }
+
+          // Raised rim on both faces.
+          if (rim[y][x]) {
+            for (let k = 0; k < RIM_HEIGHT; k++) {
+              deep.push([px, py,  half + 0.5 + k]);
+              deep.push([px, py, -half - 0.5 - k]);
+            }
+          }
+
+          // Raised symbol, front face.
+          if (symbol[y][x]) {
+            for (let k = 0; k < SYMBOL_HEIGHT; k++) deep.push([px, py, half + 0.5 + k]);
+          }
+          // Back face: mirror horizontally so the ₹ reads correctly from behind.
+          const mx = GRID_SIZE - 1 - x;
+          if (symbol[y][mx]) {
+            for (let k = 0; k < SYMBOL_HEIGHT; k++) deep.push([px, py, -half - 0.5 - k]);
+          }
+        }
+      }
+      return { face, deep };
+    }
+
+    /** One InstancedMesh per colour. */
+    function makeInstanced(positions, color, geometry) {
+      const material = new THREE.MeshStandardMaterial({
+        color,
+        metalness: METALNESS,
+        roughness: ROUGHNESS,
+      });
+      const mesh = new THREE.InstancedMesh(geometry, material, positions.length);
+      const m = new THREE.Matrix4();
+      positions.forEach(([x, y, z], i) => {
+        m.makeTranslation(x, y, z);
+        mesh.setMatrixAt(i, m);
+      });
+      mesh.instanceMatrix.needsUpdate = true;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // Slightly rounded cubes so every voxel edge catches a thin highlight.
+    const voxelGeometry = VOXEL_BEVEL > 0
+      ? new RoundedBoxGeometry(1, 1, 1, 2, VOXEL_BEVEL)
+      : new THREE.BoxGeometry(1, 1, 1);
+
+    const { face, deep } = buildVoxels();
+    coin.add(makeInstanced(face, FACE_COLOR, voxelGeometry));
+    coin.add(makeInstanced(deep, DEEP_COLOR, voxelGeometry));
+
+    /* =====================================================================
+       SIZING
+       ===================================================================== */
+
+    function resize() {
+      const { width, height } = stage.getBoundingClientRect();
+      if (!width || !height) return;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderer.render(scene, camera);
+    }
+    new ResizeObserver(resize).observe(stage);
+
+    /* =====================================================================
+       INTERACTION: hover tilt + drag to spin
+       ===================================================================== */
+
+    const AUTO_SPEED = (Math.PI * 2) / SECONDS_PER_TURN; // rad/s
+
+    const state = {
+      spin: 0,              // coin Y angle
+      spinVel: AUTO_SPEED,  // current angular velocity (eases back to AUTO_SPEED)
+      dragTiltX: 0,         // extra X tilt from vertical dragging
+      hoverX: 0, hoverY: 0, // smoothed pointer position (-1..1)
+      targetHoverX: 0, targetHoverY: 0,
+      dragging: false,
+      lastX: 0, lastY: 0, lastT: 0,
+    };
+
+    function pointerToNdc(e) {
+      const r = stage.getBoundingClientRect();
+      return [
+        ((e.clientX - r.left) / r.width) * 2 - 1,
+        ((e.clientY - r.top) / r.height) * 2 - 1,
+      ];
+    }
+
+    stage.addEventListener('pointermove', (e) => {
+      const [nx, ny] = pointerToNdc(e);
+      state.targetHoverX = THREE.MathUtils.clamp(nx, -1, 1);
+      state.targetHoverY = THREE.MathUtils.clamp(ny, -1, 1);
+
+      if (!state.dragging) return;
+      const dx = e.clientX - state.lastX;
+      const dy = e.clientY - state.lastY;
+      const now = performance.now();
+      const dt = Math.max((now - state.lastT) / 1000, 1 / 240);
+      state.spin += dx * DRAG_SENSITIVITY;
+      state.spinVel = (dx * DRAG_SENSITIVITY) / dt;   // fling velocity on release
+      state.dragTiltX = THREE.MathUtils.clamp(
+        state.dragTiltX + dy * DRAG_SENSITIVITY, -Math.PI / 3, Math.PI / 3);
+      state.lastX = e.clientX; state.lastY = e.clientY; state.lastT = now;
+      if (reducedMotion) renderStatic();
+    });
+
+    stage.addEventListener('pointerdown', (e) => {
+      state.dragging = true;
+      state.lastX = e.clientX; state.lastY = e.clientY; state.lastT = performance.now();
+      state.spinVel = 0;
+      stage.setPointerCapture(e.pointerId);
+      stage.classList.add('dragging');
+    });
+
+    function endDrag(e) {
+      if (!state.dragging) return;
+      state.dragging = false;
+      // A drag that ended without moving recently shouldn't keep a stale fling.
+      if (performance.now() - state.lastT > 80) state.spinVel = 0;
+      stage.classList.remove('dragging');
+      if (e && stage.hasPointerCapture(e.pointerId)) stage.releasePointerCapture(e.pointerId);
+    }
+    stage.addEventListener('pointerup', endDrag);
+    stage.addEventListener('pointercancel', endDrag);
+    stage.addEventListener('pointerleave', () => {
+      state.targetHoverX = 0;
+      state.targetHoverY = 0;
+    });
+
+    /* =====================================================================
+       ANIMATION LOOP
+       ===================================================================== */
+
+    // Frame-rate independent exponential ease toward a target.
+    const damp = (current, target, rate, dt) =>
+      THREE.MathUtils.lerp(current, target, 1 - Math.exp(-rate * dt));
+
+    let rafId = null;
+    let lastTime = 0;
+    let elapsed = 0;
+
+    function tick(now) {
+      rafId = requestAnimationFrame(tick);
+      const dt = Math.min((now - lastTime) / 1000, 0.1); // clamp long gaps
+      lastTime = now;
+      elapsed += dt;
+
+      // Spin: free auto-rotation, or eased back to it after a drag/fling.
+      if (!state.dragging) {
+        state.spinVel = damp(state.spinVel, AUTO_SPEED, EASE * 0.6, dt);
+        state.spin += state.spinVel * dt;
+        state.dragTiltX = damp(state.dragTiltX, 0, EASE, dt);
+      }
+
+      // Hover tilt toward the cursor (disabled while dragging).
+      const hx = state.dragging ? 0 : state.targetHoverX;
+      const hy = state.dragging ? 0 : state.targetHoverY;
+      state.hoverX = damp(state.hoverX, hx, EASE * 1.5, dt);
+      state.hoverY = damp(state.hoverY, hy, EASE * 1.5, dt);
+
+      coin.rotation.y = state.spin;
+      tiltGroup.rotation.x = BASE_TILT_X + state.dragTiltX + state.hoverY * HOVER_TILT;
+      tiltGroup.rotation.z = -state.hoverX * HOVER_TILT * 0.6;
+      tiltGroup.rotation.y = state.hoverX * HOVER_TILT;
+
+      // Gentle float.
+      floatGroup.position.y = Math.sin((elapsed / FLOAT_PERIOD) * Math.PI * 2) * FLOAT_AMPLITUDE;
+
+      renderer.render(scene, camera);
+    }
+
+    function start() {
+      if (rafId !== null || reducedMotion || document.hidden) return;
+      lastTime = performance.now();
+      rafId = requestAnimationFrame(tick);
+    }
+    function stop() {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    // Reduced motion: a still coin at a flattering angle (drag still works).
+    function renderStatic() {
+      coin.rotation.y = -0.55 + state.spin;
+      tiltGroup.rotation.set(BASE_TILT_X + state.dragTiltX, 0, 0);
+      floatGroup.position.y = 0;
+      renderer.render(scene, camera);
+    }
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let reducedMotion = motionQuery.matches;
+    motionQuery.addEventListener('change', (e) => {
+      reducedMotion = e.matches;
+      if (reducedMotion) { stop(); state.spin = 0; state.dragTiltX = 0; renderStatic(); }
+      else start();
+    });
+
+    // Pause when the tab is hidden.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop(); else start();
+    });
+
+    resize();
+    if (reducedMotion) renderStatic(); else start();
+  </script>
+</body>
+</html>
