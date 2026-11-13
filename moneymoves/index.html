@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap">
 <style>
   /* Layout: a stack of full-screen panels, text centred. The headline sits on
      yellow highlighter bands; every panel is plain white.
@@ -13,6 +13,11 @@
     --ink-soft: #4A4F57;
     --rule: #E4E6EA;
     --highlight: #F5DF72; /* warm highlighter yellow */
+    --card-butter: #F5DE78;
+    --card-brown: #6C4500;
+    --card-sky: #9CC4F5;
+    --card-flame: #F44600;
+    --card-pink: #F4B6CF;
     --focus: #3B6FD8;
     --font-display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
     --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
@@ -126,25 +131,46 @@
      grows each sample into a square block, giving stepped, pixel-art edges. */
   .px { display: inline-block; filter: url(#pixelate-sm); }
 
-  /* ---------- Skills ---------- */
+  /* ---------- Skills: five colour cards ----------
+     Tall cards set nearly edge to edge; corners alternate square / rounded.
+     Big light title top-left, small two-line label bottom-left. */
   .skills {
     list-style: none;
     margin: 12px 0 0;
     padding: 0;
     width: 100%;
+    max-width: 1080px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
-    gap: 36px 28px;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    text-align: left;
   }
-  .skills li { display: grid; gap: 6px; align-content: start; }
+  .skills li {
+    aspect-ratio: 3 / 4;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 16px;
+    background: var(--card-bg);
+    color: var(--card-ink);
+    border-radius: 2px;
+  }
+  .skills li:nth-child(even) { border-radius: 14px; }
+  .skills li:nth-child(1) { --card-bg: var(--card-butter); --card-ink: var(--ink); }
+  .skills li:nth-child(2) { --card-bg: var(--card-brown);  --card-ink: #F3E6CC; }
+  .skills li:nth-child(3) { --card-bg: var(--card-sky);    --card-ink: var(--ink); }
+  .skills li:nth-child(4) { --card-bg: var(--card-flame);  --card-ink: var(--ink); }
+  .skills li:nth-child(5) { --card-bg: var(--card-pink);   --card-ink: var(--ink); }
   .skills strong {
     font-family: var(--font-display);
-    font-size: 1.375rem;
-    font-weight: 700;
-    letter-spacing: -0.015em;
-    line-height: 1.2;
+    font-size: clamp(1.375rem, 2.2vw, 1.875rem);
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.08;
+    text-wrap: balance;
   }
-  .skills span { color: var(--ink-soft); font-size: 1rem; line-height: 1.5; }
+  .skills span { font-size: 0.8125rem; line-height: 1.3; max-width: 18ch; }
 
   /* ---------- Board tiles ---------- */
   .tiles {
@@ -176,6 +202,11 @@
     text-align: center;
   }
 
+  @media (max-width: 900px) {
+    .skills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .skills li { aspect-ratio: 4 / 3; }
+    .skills li:last-child { grid-column: 1 / -1; aspect-ratio: auto; min-height: 160px; }
+  }
   @media (max-width: 720px) {
     :root { --gutter: 24px; }
     .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
