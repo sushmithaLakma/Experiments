@@ -52,6 +52,7 @@
     // Coin grid: the face is a GRID_SIZE × GRID_SIZE pixel canvas.
     const GRID_SIZE = 32;
     const COIN_THICKNESS = 2;      // body thickness in voxels
+    const DEPTH_SCALE = 0.7;       // squash the coin's depth (1 = cubic voxels; 0.7 = 30% thinner)
     const RIM_HEIGHT = 1;          // how far the rim stands above the face (voxels)
     const SYMBOL_HEIGHT = 1;       // how far the symbol stands above the face (voxels)
 
@@ -152,6 +153,7 @@
     const tiltGroup = new THREE.Group();
     const coin = new THREE.Group();
     tiltGroup.add(coin);
+    coin.scale.z = DEPTH_SCALE;
     scene.add(tiltGroup);
 
     /** Build per-cell masks for the coin disc, its rim ring and the symbol. */
