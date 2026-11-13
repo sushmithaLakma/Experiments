@@ -1,0 +1,224 @@
+<title>MoneyMoves</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600;700;800&family=Inter:wght@400;500;600&display=swap">
+<style>
+  /* Layout: one centred reading column; each section opens with an oversized heading.
+     Single light theme on purpose: white page, ink text. */
+  :root {
+    --paper: #FFFFFF;
+    --ink: #111317;
+    --ink-soft: #4A4F57;
+    --rule: #E4E6EA;
+    --font-display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+    --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
+    --step-hero: clamp(3rem, 9vw, 6.5rem);
+    --step-h2: clamp(2.5rem, 6.5vw, 4.5rem);
+    --step-h3: clamp(1.5rem, 3vw, 2rem);
+    --step-lead: clamp(1.25rem, 2.4vw, 1.625rem);
+    --step-body: 1.125rem;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: var(--step-body);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.03em;
+    line-height: 1.02;
+    text-wrap: balance;
+    margin: 0;
+  }
+
+  p { margin: 0; max-width: 62ch; }
+
+  /* Header */
+  .site-header { padding-block: 28px; }
+  .wordmark {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.375rem;
+    letter-spacing: -0.02em;
+  }
+
+  /* Hero */
+  .hero {
+    padding-block: clamp(56px, 10vw, 120px) clamp(64px, 10vw, 128px);
+    display: grid;
+    gap: 28px;
+  }
+  .hero h1 { font-size: var(--step-hero); font-weight: 800; }
+  .hero .lead { font-size: var(--step-lead); color: var(--ink-soft); line-height: 1.4; }
+
+  /* Sections */
+  section.block {
+    border-top: 1px solid var(--rule);
+    padding-block: clamp(56px, 8vw, 104px);
+    display: grid;
+    gap: 28px;
+  }
+  section.block h2 { font-size: var(--step-h2); font-weight: 800; }
+  .lead { font-size: var(--step-lead); line-height: 1.45; }
+
+  .callout {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: var(--step-h3);
+    letter-spacing: -0.02em;
+  }
+
+  /* Skills list */
+  .sub-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .skills {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+  }
+  .skills li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 8px 32px;
+    padding-block: 20px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .skills li:first-child { border-top: 1px solid var(--rule); }
+  .skills strong {
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 700;
+    letter-spacing: -0.015em;
+    line-height: 1.25;
+  }
+  .skills span { color: var(--ink-soft); }
+
+  /* Board tiles */
+  .board { display: grid; gap: 20px; }
+  .board h3 { font-size: var(--step-h3); font-weight: 700; }
+  .tiles {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 24px;
+  }
+  .tiles li { display: grid; gap: 4px; align-content: start; }
+  .tiles b {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+  .tiles span { color: var(--ink-soft); font-size: 1rem; line-height: 1.45; }
+
+  /* Closing */
+  .closing h2 { font-size: var(--step-h2); }
+
+  .site-footer {
+    border-top: 1px solid var(--rule);
+    padding-block: 28px 40px;
+    color: var(--ink-soft);
+    font-size: 0.9375rem;
+  }
+
+  @media (max-width: 720px) {
+    .skills li { grid-template-columns: minmax(0, 1fr); }
+    .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
+</style>
+
+<header class="site-header">
+  <div class="wrap">
+    <span class="wordmark">MoneyMoves</span>
+  </div>
+</header>
+
+<main>
+  <!-- Hero -->
+  <div class="wrap">
+    <section class="hero" aria-labelledby="hero-title">
+      <h1 id="hero-title">The headstart you never had!</h1>
+      <p class="lead">Build financial life through a game.</p>
+    </section>
+  </div>
+
+  <!-- Why -->
+  <div class="wrap">
+    <section class="block" aria-labelledby="why-title">
+      <h2 id="why-title">Why?</h2>
+      <p class="lead">Like every life skill, it's important that we teach money from a young age, so they don't have to learn it the hard way.</p>
+    </section>
+  </div>
+
+  <!-- How -->
+  <div class="wrap">
+    <section class="block" aria-labelledby="how-title">
+      <h2 id="how-title">How?</h2>
+      <p class="lead">Built to learn the most important things involved when dealing with money: savings, insurance, scams and more.</p>
+      <p class="callout">Fun, engaging and easy.</p>
+
+      <p class="sub-label">Skills they build</p>
+      <ul class="skills">
+        <li><strong>Make smart decisions</strong><span>Think. Plan. Choose wisely.</span></li>
+        <li><strong>Manage money wisely</strong><span>Budget. Save. Spend smart.</span></li>
+        <li><strong>Invest &amp; build wealth</strong><span>Understand investments the fun way.</span></li>
+        <li><strong>Avoid debt &amp; traps</strong><span>Recognize risks. Stay safe.</span></li>
+        <li><strong>Plan for the future</strong><span>Dream big. Prepare early.</span></li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- What's inside -->
+  <div class="wrap">
+    <section class="block" aria-labelledby="inside-title">
+      <h2 id="inside-title">What's inside?</h2>
+      <p class="lead">Cards, money, characters and a board.</p>
+
+      <div class="board">
+        <h3>Welcome to Financial City</h3>
+        <ul class="tiles">
+          <li><b>Earn</b></li>
+          <li><b>Spend</b></li>
+          <li><b>Growth</b><span>SIP, gold, insurance, property</span></li>
+          <li><b>Trap</b><span>Online scams</span></li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- Closing -->
+  <div class="wrap">
+    <section class="block closing" aria-labelledby="cta-title">
+      <h2 id="cta-title">Get yours today and teach your kids the most valuable thing in life.</h2>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">MoneyMoves</div>
+</footer>
