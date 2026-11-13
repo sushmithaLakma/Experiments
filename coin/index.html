@@ -81,7 +81,8 @@
     //   'around-symbol': on the front, MONEY on top and MOVES below the ₹;
     //                    the back keeps just the ₹.
     //   'back-only':     the front keeps the ₹; the back has only the lettering.
-    const TEXT_LAYOUT = 'around-symbol';
+    //   'none':          no lettering; the ₹ on both faces.
+    const TEXT_LAYOUT = 'none';          // 'none' | 'around-symbol' | 'back-only'
     const TEXT_TOP = 'MONEY';
     const TEXT_BOTTOM = 'MOVES';
     const TEXT_RADIUS = 12.25;     // voxels from coin centre to the middle of the letters
@@ -352,6 +353,7 @@
 
     /** Lettering voxels on the chosen face, mirrored on the back so it reads correctly. */
     function buildText() {
+      if (TEXT_LAYOUT === 'none') return [];
       const onBack = TEXT_LAYOUT === 'back-only';
       const z = onBack
         ? -COIN_THICKNESS / 2 - TEXT_DEPTH / 2
@@ -363,7 +365,8 @@
     const { body, sym } = buildVoxels();
     coin.add(makeVoxelMesh(body, COIN_COLOR));
     coin.add(makeVoxelMesh(sym, SYMBOL_COLOR));
-    coin.add(makeVoxelMesh(buildText(), TEXT_COLOR, [TEXT_VOXEL, TEXT_VOXEL, TEXT_DEPTH]));
+    const letters = buildText();
+    if (letters.length) coin.add(makeVoxelMesh(letters, TEXT_COLOR, [TEXT_VOXEL, TEXT_VOXEL, TEXT_DEPTH]));
 
     /* =====================================================================
        SIZING
