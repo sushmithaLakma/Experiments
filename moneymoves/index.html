@@ -3,6 +3,12 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&family=Inter:wght@400;500;600&display=swap">
+<script type="importmap">
+  { "imports": {
+      "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+  } }
+</script>
 <style>
   /* Layout: a stack of full-screen panels, text centred. The hero sits on a
      grainy cloud sky that dissolves into white; every other panel is plain white.
@@ -125,6 +131,84 @@
     z-index: -1;
     pointer-events: none;
   }
+
+  /* ---------- Hero game pieces ----------
+     Cards, board tiles and tokens from the game float around the headline.
+     Positions are percentages of the hero; each piece has its own tilt (--r). */
+  .hero-props { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+  .hero > .content { position: relative; z-index: 1; }
+  .prop {
+    position: absolute;
+    transform: rotate(var(--r, 0deg));
+    animation: bob 5s ease-in-out infinite alternate;
+    animation-delay: var(--d, 0s);
+  }
+  @keyframes bob { from { translate: 0 0; } to { translate: 0 -10px; } }
+  .sprite { display: block; image-rendering: pixelated; }
+
+  .gcard {
+    width: 132px;
+    aspect-ratio: 3 / 4;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    justify-items: center;
+    background: #FFF8EA;
+    border: 3px solid var(--ink);
+    border-radius: 10px;
+    box-shadow: 5px 5px 0 var(--ink);
+    overflow: hidden;
+    font-family: var(--font-display);
+  }
+  .gcard-tag {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--gc);
+    color: var(--gc-ink, var(--ink));
+    border-bottom: 3px solid var(--ink);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .gcard .sprite { align-self: center; }
+  .gcard-note { padding: 0 8px 10px; font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
+
+  .board-path { display: flex; gap: 8px; align-items: flex-end; }
+  .tile {
+    position: relative;
+    width: 86px;
+    height: 64px;
+    display: grid;
+    place-items: center;
+    background: var(--gc);
+    color: var(--gc-ink, var(--ink));
+    border: 3px solid var(--ink);
+    border-radius: 8px;
+    box-shadow: 0 6px 0 var(--ink);
+    font-family: var(--font-display);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .tile .sprite { position: absolute; bottom: 70%; left: 50%; translate: -50% 0; }
+  .prop-coin { width: 190px; height: 190px; }
+  .prop-coin canvas { display: block; }
+
+  @media (max-width: 900px) {
+    .prop { scale: 0.62; }
+    .prop-gold, .prop-note, .prop-board { display: none; }
+  }
+  @media (max-width: 720px) {
+    .prop { scale: 0.5; }
+    .prop-coin { width: 150px; height: 150px; scale: 1 !important; }
+    .prop-low { top: 70% !important; } /* keep clear of the button */
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .prop { animation: none; }
+  }
+
   .hero h1 { font-size: var(--step-hero); font-weight: 700; line-height: 1.04; }
   .hero .lead { color: var(--ink); opacity: 0.78; font-size: 16px; line-height: 1.5; letter-spacing: -0.03em; }
 
@@ -329,6 +413,33 @@
       <rect width="100%" height="100%" fill="url(#fade-gradient)" filter="url(#sky-dissolve)" />
     </svg>
 
+    <!-- Game pieces floating around the headline (decorative) -->
+    <div class="hero-props" aria-hidden="true">
+      <div class="prop" style="left:6%; top:15%; --r:-8deg; --d:0s">
+        <div class="gcard" style="--gc: var(--card-butter)"><span class="gcard-tag">Property</span><canvas class="sprite" data-sprite="house" data-scale="5"></canvas><span class="gcard-note">Buy &amp; grow</span></div>
+      </div>
+      <div class="prop" style="right:6%; top:15%; --r:7deg; --d:-1.2s">
+        <div class="gcard" style="--gc: var(--card-sky)"><span class="gcard-tag">Insurance</span><canvas class="sprite" data-sprite="shield" data-scale="5"></canvas><span class="gcard-note">Stay covered</span></div>
+      </div>
+      <div class="prop prop-low" style="left:10%; top:54%; --r:6deg; --d:-2.4s">
+        <div class="gcard" style="--gc: var(--card-flame)"><span class="gcard-tag">Trap</span><canvas class="sprite" data-sprite="phone" data-scale="5"></canvas><span class="gcard-note">Online scam</span></div>
+      </div>
+      <div class="prop prop-low" style="right:10%; top:54%; --r:-6deg; --d:-3.1s">
+        <div class="gcard" style="--gc: var(--card-pink)"><span class="gcard-tag">SIP</span><canvas class="sprite" data-sprite="plant" data-scale="5"></canvas><span class="gcard-note">Invest monthly</span></div>
+      </div>
+      <div class="prop prop-note" style="left:23%; top:13%; --r:-14deg; --d:-0.6s"><canvas class="sprite" data-sprite="note" data-scale="5"></canvas></div>
+      <div class="prop prop-gold" style="left:25%; top:70%; --r:8deg; --d:-1.8s"><canvas class="sprite" data-sprite="gold" data-scale="5"></canvas></div>
+      <div class="prop prop-coin" id="hero-coin" style="right:21%; top:5%; --d:-2s"></div>
+      <div class="prop prop-board" style="left:50%; bottom:7%; translate:-50% 0; animation:none">
+        <div class="board-path">
+          <span class="tile" style="--gc:#FFF8EA">Start</span>
+          <span class="tile" style="--gc: var(--card-butter)">Earn</span>
+          <span class="tile" style="--gc: var(--card-pink)">Spend</span>
+          <span class="tile" style="--gc: var(--card-sky)">Growth<canvas class="sprite" data-sprite="pawn" data-scale="4"></canvas></span>
+          <span class="tile" style="--gc: var(--card-flame)">Trap</span>
+        </div>
+      </div>
+    </div>
     <div class="content">
       <h1 id="hero-title" data-pixelate>The headstart<br>you never had!</h1>
       <p class="lead">Build your kid's financial life through a game.</p>
@@ -434,4 +545,417 @@
       el.replaceChildren(wrap);
     });
   })();
+</script>
+
+<script>
+  // Draw the pixel-art pieces. Each sprite is rows of palette keys; "." is empty.
+  (function () {
+    const SPRITES = {"house":{"pal":{"k":"#1A1A1A","r":"#E0533A","R":"#A63A26","w":"#FFF4DD","W":"#E8D3A8","d":"#6C4500","b":"#9CC4F5"},"rows":[".......kk.......","......krrk......",".....krrrrk.....","....krrrrrrk....","...krrrrrrrrk...","..krrrrrrrrrrk..",".kRRRRRRRRRRRRk.","..kwwwwwwwwwwk..","..kwbbwwwwbbwk..","..kwbbwwwwbbwk..","..kwwwwddwwwwk..","..kwwwwddwwwWk..","..kwwwwddwwWWk..","..kkkkkkkkkkkk.."]},"shield":{"pal":{"k":"#1A1A1A","s":"#4C8DE8","S":"#2F68C0","w":"#FFFFFF"},"rows":["kkkkkkkkkkkkkk","kssssssSSSSSSk","kssssssSSSSSSk","kssssssSSSSSSk","kssssssSSSwSSk","kssssssSSwwSSk","kssssssSwwSSSk","ksswssswwSSSSk","ksswwswwSSSSSk","kssswwwSSSSSSk",".kssswsSSSSSk.","..kssssSSSSk..","...ksssSSSk...","....kssSSk....",".....ksSk.....","......kk......"]},"phone":{"pal":{"k":"#1A1A1A","p":"#FFE9E1","g":"#555555","r":"#E8452A","w":"#FFFFFF","l":"#F4B6A6"},"rows":[".kkkkkkkkkk.","kkkkkggkkkkk","kkppppppppkk","kkppppppppkk","kkppprrpppkk","kkppprrpppkk","kkpprwwrppkk","kkpprwwrppkk","kkprrwwrrpkk","kkprrrrrrpkk","kkrrrwwrrrkk","kkrrrrrrrrkk","kkppppppppkk","kkpllllllpkk","kkppppppppkk","kkppppppppkk","kkkkkggkkkkk",".kkkkkkkkkk."]},"plant":{"pal":{"k":"#1A1A1A","g":"#4FA35E","G":"#2F7A40","d":"#B5651D","D":"#8A4A12","y":"#F5C518","Y":"#C9960A"},"rows":["..........kk..",".........kyyk.",".........kyYk.","..kk......kk..",".kggk..kk.....",".kgGGk.kGk....","..kgGkkGgk....","...kkGGggk....","......Gkk.....","......G.......","...kkkkkkkk...","...kddddddk...","....kdddDk....","....kddDDk....","....kdDDDk....","....kkkkkk...."]},"gold":{"pal":{"k":"#1A1A1A","Y":"#FFE27A","y":"#F5B70A","o":"#C98A00","w":"#FFF6CC"},"rows":["....kkkkkkkkkk....","...kYYYYYYYYYYk...","..kYYYYwwYYYYYYk..",".kYYYYYYYYYYYYYYk.","kkkkkkkkkkkkkkkkkk","kyyyyyyyyyyyyykook","kyyywwyyyyyyyykook","kyyyyyyyyyyyyykook","kyyyyyyyyyyyyykook","kkkkkkkkkkkkkkkkkk"]},"note":{"pal":{"k":"#1A1A1A","g":"#6DBB7A","G":"#2F7A40","l":"#D8F0D2"},"rows":["kkkkkkkkkkkkkkkkkkkkkk","kGGGGGGGGGGGGGGGGGGGGk","kGggggggggggggggggggGk","kGggggggGGGGGGggggggGk","kGgggggglllGGlggggggGk","kGglggggGGGGGGgggglgGk","kGgggggglGGlllggggggGk","kGggggggglGGlgggggggGk","kGggggggggggggggggggGk","kGGGGGGGGGGGGGGGGGGGGk","kkkkkkkkkkkkkkkkkkkkkk"]},"pawn":{"pal":{"k":"#1A1A1A","p":"#8B6CE0","P":"#5C40B0","w":"#C9B8FF"},"rows":["...kkkk...","..kpwppk..","..kwpppk..","..kpppPk..","...kpPk...","....kk....","...kppk...","...kpPk...","..kppPPk..","..kppPPk..",".kpppPPPk.",".kpppPPPk.","kkkkkkkkkk","kppppPPPPk","kkkkkkkkkk",".........."]}};
+    document.querySelectorAll('canvas[data-sprite]').forEach((c) => {
+      const sp = SPRITES[c.dataset.sprite];
+      if (!sp) return;
+      const scale = Number(c.dataset.scale || 4);
+      const h = sp.rows.length, w = sp.rows[0].length;
+      c.width = w; c.height = h;
+      c.style.width = w * scale + 'px';
+      c.style.height = h * scale + 'px';
+      const ctx = c.getContext('2d');
+      sp.rows.forEach((row, y) => [...row].forEach((k, x) => {
+        const col = sp.pal[k];
+        if (!col) return;
+        ctx.fillStyle = col;
+        ctx.fillRect(x, y, 1, 1);
+      }));
+    });
+  })();
+</script>
+
+<!-- 3D voxel coin (same code as coin/index.html), rendered into #hero-coin -->
+<script type="module">
+    import * as THREE from 'three';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+
+    /* =====================================================================
+       TWEAKABLE CONSTANTS
+       ===================================================================== */
+
+    // Coin grid: the face is a GRID_SIZE × GRID_SIZE pixel canvas.
+    const GRID_SIZE = 32;
+    const COIN_THICKNESS = 2;      // body thickness in voxels
+    const DEPTH_SCALE = 0.7;       // squash the coin's depth (1 = cubic voxels; 0.7 = 30% thinner)
+    const RIM_HEIGHT = 1;          // how far the rim stands above the face (voxels)
+    const SYMBOL_HEIGHT = 1;       // how far the symbol stands above the face (voxels)
+
+    // Face design (₹, 11×16). 1 = raised voxel, 0 = empty. Any width/height works:
+    // it is centred on the coin automatically. Redraw freely.
+    const SYMBOL = [
+      [1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,1,1,1,0],
+      [0,0,0,0,0,0,0,0,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1],
+      [1,1,1,1,1,1,1,1,1,1,1],
+      [0,0,0,0,0,0,0,0,1,1,1],
+      [0,0,0,0,0,0,0,1,1,1,0],
+      [1,1,1,1,1,1,1,1,1,0,0],
+      [1,1,1,1,1,1,1,1,0,0,0],
+      [0,0,1,1,1,0,0,0,0,0,0],
+      [0,0,0,1,1,1,0,0,0,0,0],
+      [0,0,0,0,1,1,1,0,0,0,0],
+      [0,0,0,0,0,1,1,1,0,0,0],
+      [0,0,0,0,0,0,1,1,1,0,0],
+      [0,0,0,0,0,0,0,1,1,1,0],
+    ];
+
+    // Curved lettering in thin strokes, built from half-size voxels.
+    //   'around-symbol': on the front, MONEY on top and MOVES below the ₹;
+    //                    the back keeps just the ₹.
+    //   'back-only':     the front keeps the ₹; the back has only the lettering.
+    const TEXT_LAYOUT = 'around-symbol';
+    const TEXT_TOP = 'MONEY';
+    const TEXT_BOTTOM = 'MOVES';
+    const TEXT_RADIUS = 12.25;     // voxels from coin centre to the middle of the letters
+    const TEXT_PIXEL = 0.5;        // size of one font pixel on the coin (stroke width, in voxels)
+    const TEXT_VOXEL = 0.25;       // grid the curved letters snap to (finer = smoother curves)
+    const TEXT_DEPTH = 0.5;        // how far the letters stand above the face (voxels)
+    const LETTER_GAP = 1;          // empty font pixels between letters
+
+    // 5×7 pixel font ('1' = stroke). Add letters here to write other words.
+    const FONT = {
+      M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+      O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+      N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+      E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+      Y: ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+      V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+      S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+    };
+
+    // Colours.
+    const COIN_COLOR = '#FFC400';    // yellow gold: body, face and rim
+    const SYMBOL_COLOR = '#D98400';  // brown-orange gold for the raised ₹
+    const TEXT_COLOR = '#D98400';    // brown-orange gold for the lettering
+
+    // Metal look.
+    const METALNESS = 0.55;
+    const ROUGHNESS = 0.3; 
+    const ENV_INTENSITY = 0.65;    // strength of RoomEnvironment reflections
+
+    // Motion.
+    const SECONDS_PER_TURN = 6;                       // auto-rotation speed
+    const BASE_TILT_X = THREE.MathUtils.degToRad(10); // constant forward tilt
+
+    const MAX_PIXEL_RATIO = 2;
+
+    /* =====================================================================
+       RENDERER, SCENE, CAMERA
+       ===================================================================== */
+
+    const stage = document.getElementById('hero-coin');
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setClearColor(0x000000, 0);                 // transparent canvas
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, MAX_PIXEL_RATIO));
+    renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.0;
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    stage.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+
+    // Reflections: a neutral studio room baked into a prefiltered env map.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environmentIntensity = ENV_INTENSITY;
+    pmrem.dispose();
+
+    const camera = new THREE.PerspectiveCamera(30, 1, 40, 130);
+    camera.position.set(0, 0, 82);
+    camera.lookAt(0, 0, 0);
+
+    /* =====================================================================
+       LIGHTS
+       ===================================================================== */
+
+    // Soft warm ambient so shaded sides stay yellow gold, not brown.
+    scene.add(new THREE.AmbientLight(0xfff4d6, 0.2));
+
+    // Warm key light from the top-left; casts the voxel self-shadows.
+    const keyLight = new THREE.DirectionalLight(0xffe2b0, 3.6);
+    keyLight.position.set(-45, 42, 32);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.set(2048, 2048);
+    const sc = keyLight.shadow.camera;
+    sc.left = -24; sc.right = 24; sc.top = 24; sc.bottom = -24;
+    sc.near = 20; sc.far = 160;
+    keyLight.shadow.bias = -0.0004;
+    keyLight.shadow.normalBias = 0.03;
+    keyLight.shadow.radius = 2;
+    scene.add(keyLight);
+
+    // Soft warm fill from the right.
+    const fillLight = new THREE.DirectionalLight(0xfff0d0, 0.9);
+    fillLight.position.set(50, 5, 30);
+    scene.add(fillLight);
+
+    /* =====================================================================
+       BUILD THE VOXEL COIN
+       ===================================================================== */
+
+    // Scene graph: tiltGroup (fixed X tilt) → coin (Y spin)
+    const tiltGroup = new THREE.Group();
+    const coin = new THREE.Group();
+    tiltGroup.add(coin);
+    coin.scale.z = DEPTH_SCALE;
+    scene.add(tiltGroup);
+
+    /** Build per-cell masks for the coin disc, its rim ring and the symbol. */
+    function buildMasks() {
+      const c = (GRID_SIZE - 1) / 2;           // grid centre
+      const r = GRID_SIZE / 2;                 // disc radius
+      const inside = (x, y) =>
+        x >= 0 && y >= 0 && x < GRID_SIZE && y < GRID_SIZE &&
+        (x - c) ** 2 + (y - c) ** 2 <= r * r;
+
+      const disc = [], rim = [], symbol = [];
+      for (let y = 0; y < GRID_SIZE; y++) {
+        disc.push([]); rim.push([]); symbol.push([]);
+        for (let x = 0; x < GRID_SIZE; x++) {
+          const isIn = inside(x, y);
+          disc[y][x] = isIn;
+          // Rim = disc cells that touch the outside (8-neighbourhood).
+          let edge = false;
+          if (isIn) {
+            for (let dy = -1; dy <= 1 && !edge; dy++)
+              for (let dx = -1; dx <= 1; dx++)
+                if (!inside(x + dx, y + dy)) { edge = true; break; }
+          }
+          rim[y][x] = edge;
+          symbol[y][x] = false;
+        }
+      }
+
+      // Stamp the SYMBOL array into the centre of the grid.
+      const h = SYMBOL.length, w = SYMBOL[0].length;
+      const ox = Math.floor((GRID_SIZE - w) / 2);
+      const oy = Math.floor((GRID_SIZE - h) / 2);
+      for (let sy = 0; sy < h; sy++)
+        for (let sx = 0; sx < w; sx++)
+          if (SYMBOL[sy][sx]) {
+            const x = ox + sx, y = oy + sy;
+            if (disc[y]?.[x] && !rim[y][x]) symbol[y][x] = true;
+          }
+      return { disc, rim, symbol };
+    }
+
+    /** Collect voxel centres for each colour. 1 voxel = 1 world unit. */
+    function buildVoxels() {
+      const { disc, rim, symbol } = buildMasks();
+      const body = [], sym = [];
+      const c = (GRID_SIZE - 1) / 2;
+      const half = COIN_THICKNESS / 2;
+
+      for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+          if (!disc[y][x]) continue;
+          const px = x - c;
+          const py = c - y;                     // flip so row 0 is the top
+
+          // Body layers. Interior cells only need their outermost layers
+          // (inner ones are hidden), which keeps the instance count down.
+          for (let z = 0; z < COIN_THICKNESS; z++) {
+            const outer = z === 0 || z === COIN_THICKNESS - 1;
+            if (!rim[y][x] && !outer) continue;
+            body.push([px, py, z - half + 0.5]);
+          }
+
+          // Raised rim on both faces.
+          if (rim[y][x]) {
+            for (let k = 0; k < RIM_HEIGHT; k++) {
+              body.push([px, py,  half + 0.5 + k]);
+              body.push([px, py, -half - 0.5 - k]);
+            }
+          }
+
+          // Raised symbol, front face.
+          if (symbol[y][x]) {
+            for (let k = 0; k < SYMBOL_HEIGHT; k++) sym.push([px, py, half + 0.5 + k]);
+          }
+          // Back face: mirror horizontally so the ₹ reads correctly from behind.
+          const mx = GRID_SIZE - 1 - x;
+          if (symbol[y][mx] && TEXT_LAYOUT !== 'back-only') {
+            for (let k = 0; k < SYMBOL_HEIGHT; k++) sym.push([px, py, -half - 0.5 - k]);
+          }
+        }
+      }
+      return { body, sym };
+    }
+
+    /**
+     * Build one smooth mesh per colour from the voxels. Only faces that touch
+     * empty space are kept, so flat areas form one seamless surface with no
+     * visible lines between voxels, while the outline stays stepped.
+     */
+    const FACE_DIRS = [
+      { n: [ 1, 0, 0], c: [[1,0,0],[1,1,0],[1,1,1],[1,0,1]] },
+      { n: [-1, 0, 0], c: [[0,0,1],[0,1,1],[0,1,0],[0,0,0]] },
+      { n: [ 0, 1, 0], c: [[0,1,1],[1,1,1],[1,1,0],[0,1,0]] },
+      { n: [ 0,-1, 0], c: [[0,0,0],[1,0,0],[1,0,1],[0,0,1]] },
+      { n: [ 0, 0, 1], c: [[1,0,1],[1,1,1],[0,1,1],[0,0,1]] },
+      { n: [ 0, 0,-1], c: [[0,0,0],[0,1,0],[1,1,0],[1,0,0]] },
+    ];
+
+    function makeVoxelMesh(positions, color, size = [1, 1, 1]) {
+      const occupied = new Set(positions.map(([x, y, z]) => key(x, y, z)));
+      const [sx, sy, sz] = size;
+      const verts = [], normals = [], index = [];
+      for (const [x, y, z] of positions) {
+        for (const { n, c } of FACE_DIRS) {
+          if (occupied.has(key(x + n[0] * sx, y + n[1] * sy, z + n[2] * sz))) continue; // hidden face
+          const base = verts.length / 3;
+          for (const [cx, cy, cz] of c) {
+            verts.push(x + (cx - 0.5) * sx, y + (cy - 0.5) * sy, z + (cz - 0.5) * sz);
+            normals.push(...n);
+          }
+          index.push(base, base + 1, base + 2, base, base + 2, base + 3);
+        }
+      }
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+      geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+      geometry.setIndex(index);
+
+      const material = new THREE.MeshStandardMaterial({
+        color,
+        metalness: METALNESS,
+        roughness: ROUGHNESS,
+      });
+      const mesh = new THREE.Mesh(geometry, material);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // Voxel centres sit on eighth-units, so key on coordinates × 8.
+    const key = (x, y, z) => `${Math.round(x * 8)},${Math.round(y * 8)},${Math.round(z * 8)}`;
+
+    /**
+     * Bend a word around the coin. The word is laid out as a strip of 5×7
+     * font pixels, then every pixel is placed on an arc and snapped to the
+     * fine TEXT_VOXEL grid. 'top' reads clockwise with letter tops facing
+     * out; 'bottom' reads anticlockwise with tops facing the centre, so both
+     * words read upright. Returns [x, y] centres in coin units.
+     */
+    function arcText(word, side) {
+      const glyphW = 5, glyphH = 7;
+      const cols = word.length * (glyphW + LETTER_GAP) - LETTER_GAP;
+      const width = cols * TEXT_PIXEL, height = glyphH * TEXT_PIXEL;
+      // Sample each font pixel finely enough to fill every grid cell it covers.
+      const n = Math.max(2, Math.ceil((TEXT_PIXEL / TEXT_VOXEL) * 2));
+      const samples = Array.from({ length: n }, (_, k) => (k + 0.5) / n);
+      const cells = new Map();
+      [...word].forEach((ch, li) => {
+        const glyph = FONT[ch];
+        if (!glyph) return; // unknown letter: leave a gap
+        for (let r = 0; r < glyphH; r++) {
+          for (let c = 0; c < glyphW; c++) {
+            if (glyph[r][c] !== '1') continue;
+            for (const su of samples) for (const sv of samples) {
+              const u = (li * (glyphW + LETTER_GAP) + c + su) * TEXT_PIXEL;
+              const v = (r + sv) * TEXT_PIXEL;               // down from letter top
+              const along = (width / 2 - u) / TEXT_RADIUS;   // radians from centre line
+              const angle = side === 'top' ? Math.PI / 2 + along : -Math.PI / 2 - along;
+              const radius = side === 'top'
+                ? TEXT_RADIUS + height / 2 - v
+                : TEXT_RADIUS - height / 2 + v;
+              const i = Math.floor((radius * Math.cos(angle)) / TEXT_VOXEL);
+              const j = Math.floor((radius * Math.sin(angle)) / TEXT_VOXEL);
+              cells.set(`${i},${j}`, [(i + 0.5) * TEXT_VOXEL, (j + 0.5) * TEXT_VOXEL]);
+            }
+          }
+        }
+      });
+      return [...cells.values()];
+    }
+
+    /** Lettering voxels on the chosen face, mirrored on the back so it reads correctly. */
+    function buildText() {
+      const onBack = TEXT_LAYOUT === 'back-only';
+      const z = onBack
+        ? -COIN_THICKNESS / 2 - TEXT_DEPTH / 2
+        :  COIN_THICKNESS / 2 + TEXT_DEPTH / 2;
+      return [...arcText(TEXT_TOP, 'top'), ...arcText(TEXT_BOTTOM, 'bottom')]
+        .map(([x, y]) => [onBack ? -x : x, y, z]);
+    }
+
+    const { body, sym } = buildVoxels();
+    coin.add(makeVoxelMesh(body, COIN_COLOR));
+    coin.add(makeVoxelMesh(sym, SYMBOL_COLOR));
+    coin.add(makeVoxelMesh(buildText(), TEXT_COLOR, [TEXT_VOXEL, TEXT_VOXEL, TEXT_DEPTH]));
+
+    /* =====================================================================
+       SIZING
+       ===================================================================== */
+
+    function resize() {
+      const { width, height } = stage.getBoundingClientRect();
+      if (!width || !height) return;
+      renderer.setSize(width, height, false);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+      if (reducedMotion) renderer.render(scene, camera);
+    }
+    new ResizeObserver(resize).observe(stage);
+
+    /* =====================================================================
+       ANIMATION LOOP: steady rotation only
+       ===================================================================== */
+
+    const SPIN_SPEED = (Math.PI * 2) / SECONDS_PER_TURN; // rad/s
+    const STILL_ANGLE = -0.55;                           // pose for reduced motion
+
+    let rafId = null;
+    let lastTime = 0;
+
+    function tick(now) {
+      rafId = requestAnimationFrame(tick);
+      const dt = Math.min((now - lastTime) / 1000, 0.1); // clamp long gaps
+      lastTime = now;
+      coin.rotation.y += SPIN_SPEED * dt;
+      renderer.render(scene, camera);
+    }
+
+    function start() {
+      if (rafId !== null || reducedMotion || document.hidden) return;
+      lastTime = performance.now();
+      rafId = requestAnimationFrame(tick);
+    }
+    function stop() {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = null;
+    }
+
+    // Reduced motion: a still coin at a slight angle.
+    function renderStatic() {
+      coin.rotation.y = STILL_ANGLE;
+      renderer.render(scene, camera);
+    }
+
+    const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let reducedMotion = motionQuery.matches;
+    motionQuery.addEventListener('change', (e) => {
+      reducedMotion = e.matches;
+      if (reducedMotion) { stop(); renderStatic(); } else start();
+    });
+
+    // Pause when the tab is hidden.
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) stop(); else start();
+    });
+
+    tiltGroup.rotation.x = BASE_TILT_X;
+    resize();
+    if (reducedMotion) renderStatic(); else start();
 </script>
