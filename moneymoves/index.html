@@ -216,32 +216,44 @@
   <section class="panel hero" aria-labelledby="hero-title">
     <svg class="sky" viewBox="0 0 1600 1000" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
       <defs>
+        <!-- Hazy pastel sky: periwinkle blue with very little top-to-bottom change. -->
         <linearGradient id="sky-gradient" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#6FA6E4" />
-          <stop offset="0.55" stop-color="#A9CBF1" />
-          <stop offset="1" stop-color="#E9F2FC" />
+          <stop offset="0" stop-color="#9FBFE4" />
+          <stop offset="0.5" stop-color="#AFC8E9" />
+          <stop offset="1" stop-color="#BDD0EC" />
         </linearGradient>
-        <!-- Soft, wide clouds: low-frequency noise turned into white with alpha. -->
-        <filter id="clouds" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.0018 0.0045" numOctaves="5" seed="11" />
-          <feColorMatrix values="0 0 0 0 1
-                                 0 0 0 0 1
-                                 0 0 0 0 1
-                                 3.2 0 0 0 -1.45" />
-          <feGaussianBlur stdDeviation="2" />
+        <!-- Lavender haze: faint violet patches, as in the reference. -->
+        <filter id="haze" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.0012 0.0022" numOctaves="3" seed="21" />
+          <feColorMatrix values="0 0 0 0 0.84
+                                 0 0 0 0 0.79
+                                 0 0 0 0 0.90
+                                 1.8 0 0 0 -0.75" />
+          <feGaussianBlur stdDeviation="18" />
         </filter>
-        <!-- Lighter, wispier layer on top. -->
-        <filter id="wisps" x="0" y="0" width="100%" height="100%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.004 0.011" numOctaves="4" seed="3" />
-          <feColorMatrix values="0 0 0 0 1
-                                 0 0 0 0 1
-                                 0 0 0 0 1
-                                 2.4 0 0 0 -1.15" />
+        <!-- Big, soft clouds covering about half the sky. -->
+        <filter id="clouds" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.0016 0.0034" numOctaves="5" seed="11" />
+          <feColorMatrix values="0 0 0 0 0.95
+                                 0 0 0 0 0.955
+                                 0 0 0 0 0.97
+                                 3.0 0 0 0 -1.2" />
+          <feGaussianBlur stdDeviation="4" />
+        </filter>
+        <!-- Brighter cloud cores so the clouds have some depth. -->
+        <filter id="cores" x="0" y="0" width="100%" height="100%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.0016 0.0034" numOctaves="5" seed="11" />
+          <feColorMatrix values="0 0 0 0 0.98
+                                 0 0 0 0 0.985
+                                 0 0 0 0 0.99
+                                 3.6 0 0 0 -1.9" />
+          <feGaussianBlur stdDeviation="6" />
         </filter>
       </defs>
       <rect width="1600" height="1000" fill="url(#sky-gradient)" />
+      <rect width="1600" height="1000" filter="url(#haze)" opacity="0.7" />
       <rect width="1600" height="1000" filter="url(#clouds)" />
-      <rect width="1600" height="1000" filter="url(#wisps)" opacity="0.55" />
+      <rect width="1600" height="1000" filter="url(#cores)" opacity="0.8" />
     </svg>
     <div class="grain" aria-hidden="true"></div>
 
