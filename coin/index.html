@@ -77,9 +77,34 @@
       [0,0,0,0,0,0,0,1,1,1,0],
     ];
 
+    // Curved lettering in thin strokes, built from half-size voxels.
+    //   'around-symbol': on the front, MONEY on top and MOVES below the ₹;
+    //                    the back keeps just the ₹.
+    //   'back-only':     the front keeps the ₹; the back has only the lettering.
+    const TEXT_LAYOUT = 'around-symbol';
+    const TEXT_TOP = 'MONEY';
+    const TEXT_BOTTOM = 'MOVES';
+    const TEXT_RADIUS = 12.25;     // voxels from coin centre to the middle of the letters
+    const TEXT_PIXEL = 0.5;        // size of one font pixel on the coin (stroke width, in voxels)
+    const TEXT_VOXEL = 0.25;       // grid the curved letters snap to (finer = smoother curves)
+    const TEXT_DEPTH = 0.5;        // how far the letters stand above the face (voxels)
+    const LETTER_GAP = 1;          // empty font pixels between letters
+
+    // 5×7 pixel font ('1' = stroke). Add letters here to write other words.
+    const FONT = {
+      M: ['10001', '11011', '10101', '10101', '10001', '10001', '10001'],
+      O: ['01110', '10001', '10001', '10001', '10001', '10001', '01110'],
+      N: ['10001', '11001', '10101', '10011', '10001', '10001', '10001'],
+      E: ['11111', '10000', '10000', '11110', '10000', '10000', '11111'],
+      Y: ['10001', '10001', '01010', '00100', '00100', '00100', '00100'],
+      V: ['10001', '10001', '10001', '10001', '10001', '01010', '00100'],
+      S: ['01111', '10000', '10000', '01110', '00001', '00001', '11110'],
+    };
+
     // Colours.
     const COIN_COLOR = '#FFC400';    // yellow gold: body, face and rim
     const SYMBOL_COLOR = '#D98400';  // brown-orange gold for the raised ₹
+    const TEXT_COLOR = '#D98400';    // brown-orange gold for the lettering
 
     // Metal look.
     const METALNESS = 0.55;
@@ -230,7 +255,7 @@
           }
           // Back face: mirror horizontally so the ₹ reads correctly from behind.
           const mx = GRID_SIZE - 1 - x;
-          if (symbol[y][mx]) {
+          if (symbol[y][mx] && TEXT_LAYOUT !== 'back-only') {
             for (let k = 0; k < SYMBOL_HEIGHT; k++) sym.push([px, py, -half - 0.5 - k]);
           }
         }
@@ -252,14 +277,16 @@
       { n: [ 0, 0,-1], c: [[0,0,0],[0,1,0],[1,1,0],[1,0,0]] },
     ];
 
-    function makeVoxelMesh(positions, occupied, color) {
+    function makeVoxelMesh(positions, color, size = [1, 1, 1]) {
+      const occupied = new Set(positions.map(([x, y, z]) => key(x, y, z)));
+      const [sx, sy, sz] = size;
       const verts = [], normals = [], index = [];
       for (const [x, y, z] of positions) {
         for (const { n, c } of FACE_DIRS) {
-          if (occupied.has(key(x + n[0], y + n[1], z + n[2]))) continue; // hidden face
+          if (occupied.has(key(x + n[0] * sx, y + n[1] * sy, z + n[2] * sz))) continue; // hidden face
           const base = verts.length / 3;
           for (const [cx, cy, cz] of c) {
-            verts.push(x - 0.5 + cx, y - 0.5 + cy, z - 0.5 + cz);
+            verts.push(x + (cx - 0.5) * sx, y + (cy - 0.5) * sy, z + (cz - 0.5) * sz);
             normals.push(...n);
           }
           index.push(base, base + 1, base + 2, base, base + 2, base + 3);
@@ -281,13 +308,62 @@
       return mesh;
     }
 
-    // Voxel centres sit on half-units in z, so key on doubled coordinates.
-    const key = (x, y, z) => `${Math.round(x * 2)},${Math.round(y * 2)},${Math.round(z * 2)}`;
+    // Voxel centres sit on eighth-units, so key on coordinates × 8.
+    const key = (x, y, z) => `${Math.round(x * 8)},${Math.round(y * 8)},${Math.round(z * 8)}`;
+
+    /**
+     * Bend a word around the coin. The word is laid out as a strip of 5×7
+     * font pixels, then every pixel is placed on an arc and snapped to the
+     * fine TEXT_VOXEL grid. 'top' reads clockwise with letter tops facing
+     * out; 'bottom' reads anticlockwise with tops facing the centre, so both
+     * words read upright. Returns [x, y] centres in coin units.
+     */
+    function arcText(word, side) {
+      const glyphW = 5, glyphH = 7;
+      const cols = word.length * (glyphW + LETTER_GAP) - LETTER_GAP;
+      const width = cols * TEXT_PIXEL, height = glyphH * TEXT_PIXEL;
+      // Sample each font pixel finely enough to fill every grid cell it covers.
+      const n = Math.max(2, Math.ceil((TEXT_PIXEL / TEXT_VOXEL) * 2));
+      const samples = Array.from({ length: n }, (_, k) => (k + 0.5) / n);
+      const cells = new Map();
+      [...word].forEach((ch, li) => {
+        const glyph = FONT[ch];
+        if (!glyph) return; // unknown letter: leave a gap
+        for (let r = 0; r < glyphH; r++) {
+          for (let c = 0; c < glyphW; c++) {
+            if (glyph[r][c] !== '1') continue;
+            for (const su of samples) for (const sv of samples) {
+              const u = (li * (glyphW + LETTER_GAP) + c + su) * TEXT_PIXEL;
+              const v = (r + sv) * TEXT_PIXEL;               // down from letter top
+              const along = (width / 2 - u) / TEXT_RADIUS;   // radians from centre line
+              const angle = side === 'top' ? Math.PI / 2 + along : -Math.PI / 2 - along;
+              const radius = side === 'top'
+                ? TEXT_RADIUS + height / 2 - v
+                : TEXT_RADIUS - height / 2 + v;
+              const i = Math.floor((radius * Math.cos(angle)) / TEXT_VOXEL);
+              const j = Math.floor((radius * Math.sin(angle)) / TEXT_VOXEL);
+              cells.set(`${i},${j}`, [(i + 0.5) * TEXT_VOXEL, (j + 0.5) * TEXT_VOXEL]);
+            }
+          }
+        }
+      });
+      return [...cells.values()];
+    }
+
+    /** Lettering voxels on the chosen face, mirrored on the back so it reads correctly. */
+    function buildText() {
+      const onBack = TEXT_LAYOUT === 'back-only';
+      const z = onBack
+        ? -COIN_THICKNESS / 2 - TEXT_DEPTH / 2
+        :  COIN_THICKNESS / 2 + TEXT_DEPTH / 2;
+      return [...arcText(TEXT_TOP, 'top'), ...arcText(TEXT_BOTTOM, 'bottom')]
+        .map(([x, y]) => [onBack ? -x : x, y, z]);
+    }
 
     const { body, sym } = buildVoxels();
-    const occupied = new Set([...body, ...sym].map(([x, y, z]) => key(x, y, z)));
-    coin.add(makeVoxelMesh(body, occupied, COIN_COLOR));
-    coin.add(makeVoxelMesh(sym, occupied, SYMBOL_COLOR));
+    coin.add(makeVoxelMesh(body, COIN_COLOR));
+    coin.add(makeVoxelMesh(sym, SYMBOL_COLOR));
+    coin.add(makeVoxelMesh(buildText(), TEXT_COLOR, [TEXT_VOXEL, TEXT_VOXEL, TEXT_DEPTH]));
 
     /* =====================================================================
        SIZING
