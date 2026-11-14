@@ -417,7 +417,7 @@ h1, h2, h3 { letter-spacing: -0.0455em; }
 .box ol { margin: 10px 0 0; padding-left: 22px; display: grid; gap: 4px; font-size: 15px; color: var(--ink-soft); }
 .founder-row { margin-bottom: 0; }
 .founder-row .team-item { border-top: 0; padding-top: 0; }
-.founder-col { display: flex; flex-direction: column; justify-content: space-between; gap: var(--s4); }
+.founder-col { display: flex; flex-direction: column; justify-content: flex-start; gap: var(--s4); }
 .mini-cards { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
 .mc { border: 2px solid var(--ink); border-radius: 14px; box-shadow: 4px 4px 0 var(--ink); padding: var(--s3); display: grid; gap: 8px; align-content: start; }
 .mc .num { font: 600 40px/1 var(--f-display); letter-spacing: -0.039em; color: var(--gold); }
@@ -427,8 +427,6 @@ img.buy-photo { width: 100%; height: auto; object-fit: cover; border: 0; backgro
 .brand { flex-direction: column; align-items: flex-start; gap: 4px; letter-spacing: 0; }
 .brand-name { font: 700 20px/1 var(--f-display); letter-spacing: -0.03em; }
 .brand-by { font: italic 400 12px/1 var(--f-body); color: var(--ink-soft); letter-spacing: .02em; }
-.founder-col, .founder-col .team-item, .mc { text-align: center; justify-items: center; }
-.founder-col .team-item p { margin-inline: auto; }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -449,7 +447,6 @@ img.buy-photo { width: 100%; height: auto; object-fit: cover; border: 0; backgro
   <section class="hero">
     <div class="wrap hero-grid">
       <div class="hero-copy">
-        <span class="eyebrow">Money Moves · a board game by DHANAM</span>
         <h1>Real money decisions, <span class="gold">one roll at a time.</span></h1>
         <p class="lede">A board game that plays out how money really moves: insurance, property, investments, and the scams and traps along the way.</p>
         <div class="hero-actions">
