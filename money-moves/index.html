@@ -433,6 +433,17 @@ img.buy-photo { width: 100%; height: auto; object-fit: cover; border: 0; backgro
 .lead label { display: grid; gap: 6px; font-size: 14px; font-weight: 600; }
 .lead input { font: 400 16px/1.2 var(--f-body); color: var(--ink); padding: 12px 14px; border: 1.5px solid var(--ink); border-radius: 10px; background: var(--paper); }
 .lead .btn { justify-self: start; }
+@media (max-width: 760px) {
+  .fan { flex-direction: row; align-items: stretch; justify-content: flex-start; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 16px calc(50% - 120px) 20px; margin-inline: -16px; scrollbar-width: none; }
+  .fan::-webkit-scrollbar { display: none; }
+  .fan-row { display: contents; }
+  .gc, .fan-row > .gc:first-child { --w: 240px; margin-left: 0; transform: none; scroll-snap-align: center; scroll-snap-stop: always; }
+  .gc:hover, .gc:focus-visible { transform: none; }
+  .gc-top { padding: 12px 14px; } .gc-body { padding: 16px 14px 14px; gap: 10px; }
+  .gc .mini { width: 26px; height: 26px; padding: 4px; } .gc .mini i { width: 4px; height: 4px; }
+  .gc-deck { font-size: 10px; letter-spacing: .14em; }
+  .gc h3 { font-size: 22px; } .gc p { font-size: 14px; } .gc .try { font-size: 12px; }
+}
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
