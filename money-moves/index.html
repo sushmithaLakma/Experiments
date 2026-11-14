@@ -620,9 +620,11 @@ img.buy-photo { width: 100%; height: auto; object-fit: cover; border: 0; backgro
               <li>Wooden peg-people player pieces</li>
             </ol>
           </details>
-          <form class="lead" name="order" method="POST" data-netlify="true" netlify-honeypot="company" id="leadForm">
+          <button class="btn" type="button" id="buyStart">Buy the game</button>
+          <form class="lead" name="order" method="POST" data-netlify="true" netlify-honeypot="company" id="leadForm" hidden>
             <input type="hidden" name="form-name" value="order">
             <p hidden><label>Leave empty <input name="company"></label></p>
+            <label>Name<input type="text" name="name" required autocomplete="name" placeholder="Your full name"></label>
             <label>Email<input type="email" name="email" required autocomplete="email" placeholder="you@example.com"></label>
             <label>Phone<input type="tel" name="phone" required autocomplete="tel" pattern="[0-9+ ]{10,15}" placeholder="10-digit mobile number"></label>
             <button class="btn" type="submit">Continue to pay</button>
@@ -835,11 +837,17 @@ img.buy-photo { width: 100%; height: auto; object-fit: cover; border: 0; backgro
 </script>
 <script>
 (function () {
-  var f = document.getElementById("leadForm"), pay = document.getElementById("payBox");
+  // Paste the Google Apps Script web app URL here to send each order to Google Sheets.
+  var SHEET_URL = "";
+  var f = document.getElementById("leadForm"), pay = document.getElementById("payBox"), start = document.getElementById("buyStart");
+  function openForm() { start.hidden = true; if (pay.hidden) { f.hidden = false; } }
+  start.addEventListener("click", function () { openForm(); f.querySelector("input[name=name]").focus(); });
+  document.querySelectorAll('a[href="#get"]').forEach(function (a) { a.addEventListener("click", openForm); });
   f.addEventListener("submit", function (e) {
     e.preventDefault();
     if (!f.reportValidity()) return;
     var body = new URLSearchParams(new FormData(f)).toString();
+    if (SHEET_URL) fetch(SHEET_URL, { method: "POST", mode: "no-cors", body: new URLSearchParams(new FormData(f)) }).catch(function () {});
     var show = function () { f.hidden = true; pay.hidden = false; pay.scrollIntoView({ block: "center" }); };
     fetch("/", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: body }).then(show, show);
   });
