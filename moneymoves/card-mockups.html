@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Money Moves Card Mockups</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+  /* Card mockups made for the Money Moves hero. Self-contained:
+     copy a card's markup, the CSS below and the sprite script at the end. */
+  :root {
+    --ink: #111317;
+    --ink-soft: #4A4F57;
+    --card-butter: #F5DE78;
+    --card-brown: #6C4500;
+    --card-sky: #9CC4F5;
+    --card-flame: #F44600;
+    --card-pink: #F4B6CF;
+    --font-display: "Inter Tight", "Helvetica Neue", Arial, sans-serif;
+    --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px 24px 64px; background: #F4F2EE; color: var(--ink); font-family: var(--font-body); }
+  h1 { font-family: var(--font-display); font-size: 28px; letter-spacing: -0.02em; margin: 0 0 6px; }
+  h2 { font-family: var(--font-display); font-size: 18px; margin: 40px 0 6px; }
+  p.note { margin: 0 0 20px; color: var(--ink-soft); font-size: 14px; max-width: 70ch; }
+  .row { display: flex; flex-wrap: wrap; gap: 28px; align-items: flex-start; }
+  .row > * { flex: none; }
+  .sprite { display: block; image-rendering: pixelated; }
+
+  /* ---------- Pixel-art game cards ---------- */
+  .gcard {
+    width: 132px;
+    aspect-ratio: 3 / 4;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    justify-items: center;
+    background: #FFF8EA;
+    border: 3px solid var(--ink);
+    border-radius: 10px;
+    box-shadow: 5px 5px 0 var(--ink);
+    overflow: hidden;
+    font-family: var(--font-display);
+  }
+  .gcard-tag {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--gc);
+    color: var(--gc-ink, var(--ink));
+    border-bottom: 3px solid var(--ink);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+  .gcard .sprite { align-self: center; }
+  .gcard-note { padding: 0 8px 10px; font-size: 0.75rem; font-weight: 600; color: var(--ink-soft); }
+
+</style>
+</head>
+<body>
+  <h1>Money Moves card mockups</h1>
+  <p class="note">The first pixel-art cards made for the landing page hero, plus the pixel rupee note and gold bar.</p>
+
+    <p class="note">Captions "Buy &amp; grow", "Stay covered" and "Invest monthly" were placeholder wording.</p>
+  <div class="row">
+    <div class="gcard" style="--gc: var(--card-butter)"><span class="gcard-tag">Property</span><canvas class="sprite" data-sprite="house" data-scale="5"></canvas><span class="gcard-note">Buy &amp; grow</span></div>
+    <div class="gcard" style="--gc: var(--card-sky)"><span class="gcard-tag">Insurance</span><canvas class="sprite" data-sprite="shield" data-scale="5"></canvas><span class="gcard-note">Stay covered</span></div>
+    <div class="gcard" style="--gc: var(--card-flame)"><span class="gcard-tag">Trap</span><canvas class="sprite" data-sprite="phone" data-scale="5"></canvas><span class="gcard-note">Online scam</span></div>
+    <div class="gcard" style="--gc: var(--card-pink)"><span class="gcard-tag">SIP</span><canvas class="sprite" data-sprite="plant" data-scale="5"></canvas><span class="gcard-note">Invest monthly</span></div>
+    <canvas class="sprite" data-sprite="note" data-scale="5"></canvas>
+    <canvas class="sprite" data-sprite="gold" data-scale="5"></canvas>
+  </div>
+
+<script>
+  // Draw the pixel-art pieces. Each sprite is rows of palette keys; "." is empty.
+  (function () {
+    const SPRITES = {"house":{"pal":{"k":"#1A1A1A","r":"#E0533A","R":"#A63A26","w":"#FFF4DD","W":"#E8D3A8","d":"#6C4500","b":"#9CC4F5"},"rows":[".......kk.......","......krrk......",".....krrrrk.....","....krrrrrrk....","...krrrrrrrrk...","..krrrrrrrrrrk..",".kRRRRRRRRRRRRk.","..kwwwwwwwwwwk..","..kwbbwwwwbbwk..","..kwbbwwwwbbwk..","..kwwwwddwwwwk..","..kwwwwddwwwWk..","..kwwwwddwwWWk..","..kkkkkkkkkkkk.."]},"shield":{"pal":{"k":"#1A1A1A","s":"#4C8DE8","S":"#2F68C0","w":"#FFFFFF"},"rows":["kkkkkkkkkkkkkk","kssssssSSSSSSk","kssssssSSSSSSk","kssssssSSSSSSk","kssssssSSSwSSk","kssssssSSwwSSk","kssssssSwwSSSk","ksswssswwSSSSk","ksswwswwSSSSSk","kssswwwSSSSSSk",".kssswsSSSSSk.","..kssssSSSSk..","...ksssSSSk...","....kssSSk....",".....ksSk.....","......kk......"]},"phone":{"pal":{"k":"#1A1A1A","p":"#FFE9E1","g":"#555555","r":"#E8452A","w":"#FFFFFF","l":"#F4B6A6"},"rows":[".kkkkkkkkkk.","kkkkkggkkkkk","kkppppppppkk","kkppppppppkk","kkppprrpppkk","kkppprrpppkk","kkpprwwrppkk","kkpprwwrppkk","kkprrwwrrpkk","kkprrrrrrpkk","kkrrrwwrrrkk","kkrrrrrrrrkk","kkppppppppkk","kkpllllllpkk","kkppppppppkk","kkppppppppkk","kkkkkggkkkkk",".kkkkkkkkkk."]},"plant":{"pal":{"k":"#1A1A1A","g":"#4FA35E","G":"#2F7A40","d":"#B5651D","D":"#8A4A12","y":"#F5C518","Y":"#C9960A"},"rows":["..........kk..",".........kyyk.",".........kyYk.","..kk......kk..",".kggk..kk.....",".kgGGk.kGk....","..kgGkkGgk....","...kkGGggk....","......Gkk.....","......G.......","...kkkkkkkk...","...kddddddk...","....kdddDk....","....kddDDk....","....kdDDDk....","....kkkkkk...."]},"gold":{"pal":{"k":"#1A1A1A","Y":"#FFE27A","y":"#F5B70A","o":"#C98A00","w":"#FFF6CC"},"rows":["....kkkkkkkkkk....","...kYYYYYYYYYYk...","..kYYYYwwYYYYYYk..",".kYYYYYYYYYYYYYYk.","kkkkkkkkkkkkkkkkkk","kyyyyyyyyyyyyykook","kyyywwyyyyyyyykook","kyyyyyyyyyyyyykook","kyyyyyyyyyyyyykook","kkkkkkkkkkkkkkkkkk"]},"note":{"pal":{"k":"#1A1A1A","g":"#6DBB7A","G":"#2F7A40","l":"#D8F0D2"},"rows":["kkkkkkkkkkkkkkkkkkkkkk","kGGGGGGGGGGGGGGGGGGGGk","kGggggggggggggggggggGk","kGggggggGGGGGGggggggGk","kGgggggglllGGlggggggGk","kGglggggGGGGGGgggglgGk","kGgggggglGGlllggggggGk","kGggggggglGGlgggggggGk","kGggggggggggggggggggGk","kGGGGGGGGGGGGGGGGGGGGk","kkkkkkkkkkkkkkkkkkkkkk"]},"pawn":{"pal":{"k":"#1A1A1A","p":"#8B6CE0","P":"#5C40B0","w":"#C9B8FF"},"rows":["...kkkk...","..kpwppk..","..kwpppk..","..kpppPk..","...kpPk...","....kk....","...kppk...","...kpPk...","..kppPPk..","..kppPPk..",".kpppPPPk.",".kpppPPPk.","kkkkkkkkkk","kppppPPPPk","kkkkkkkkkk",".........."]}};
+    document.querySelectorAll('canvas[data-sprite]').forEach((c) => {
+      const sp = SPRITES[c.dataset.sprite];
+      if (!sp) return;
+      const scale = Number(c.dataset.scale || 4);
+      const h = sp.rows.length, w = sp.rows[0].length;
+      c.width = w; c.height = h;
+      c.style.width = w * scale + 'px';
+      c.style.height = h * scale + 'px';
+      const ctx = c.getContext('2d');
+      sp.rows.forEach((row, y) => [...row].forEach((k, x) => {
+        const col = sp.pal[k];
+        if (!col) return;
+        ctx.fillStyle = col;
+        ctx.fillRect(x, y, 1, 1);
+      }));
+    });
+  })();
+</script>
+</body>
+</html>
